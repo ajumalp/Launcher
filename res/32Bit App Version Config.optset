@@ -1,0 +1,32 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <VerInfo_Release>1</VerInfo_Release>
+        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <Debugger_EnvVars>JCLPath=3rd Party\JCL\;$(Debugger_EnvVars)</Debugger_EnvVars>
+        <DCC_DebugDCUs>true</DCC_DebugDCUs>
+        <DCC_UnitSearchPath>$(ES_DELPHICONTROLS);3rd Party\JCL\source\windows;3rd Party\JCL\source\common;3rd Party\JCL\source\include;C:\Delphi Controls\DX 10.2\BackgroundWorker;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <Icon_MainIcon>res\Images\EG_Icon.ico</Icon_MainIcon>
+        <Debugger_IncludeSystemVars>true</Debugger_IncludeSystemVars>
+        <VerInfo_Build>32</VerInfo_Build>
+        <DCC_Define>AbbreviaZipper;$(DCC_Define)</DCC_Define>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=Erratum Solutions;FileDescription=Easy App Launcher;FileVersion=1.0.1.32;InternalName=Application Launcher;LegalCopyright=Copyright @ 2018;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.1;Comments=Developed by Muhammad Ajmal P;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
+        <DCC_RemoteDebug>false</DCC_RemoteDebug>
+        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
+        <BT_BuildType>Debug</BT_BuildType>
+        <PF_UWPPublisher>CN=Erratums</PF_UWPPublisher>
+        <PF_UWPPackageName>ESoft.Launcher</PF_UWPPackageName>
+        <PF_UWPPackageDisplayName>Application Launcher</PF_UWPPackageDisplayName>
+        <PF_UWPPublisherDisplayName>Erratum Solutions</PF_UWPPublisherDisplayName>
+        <PF_UWPDistributionType>Store</PF_UWPDistributionType>
+    </PropertyGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Delphi.Personality.12</Borland.Personality>
+        <Borland.ProjectType>OptionSet</Borland.ProjectType>
+        <BorlandProject>
+            <Delphi.Personality/>
+        </BorlandProject>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+</Project>
