@@ -81,8 +81,8 @@ Const
 
    // In the order MMmmRRBB
    // M - Major, m - Minor, R - Release and B - Build { Ajmal }
-   cApplication_Version = 01000134;
-   cAppVersion = '1.0.1.34';
+   cApplication_Version = 01000135;
+   cAppVersion = '1.0.1.35';
 
 Type
    // Forward declarations 
@@ -1111,8 +1111,12 @@ End;
 
 Procedure TFormMDIMain.PMItemExitClick(Sender: TObject);
 Begin
-   SaveConfig;
-   Application.Terminate;
+   Try
+      SaveConfig;
+      Application.Terminate;
+   Except
+      // Do nothing { Ajmal }
+   End;
 End;
 
 Procedure TFormMDIMain.PMItemFavoriteClick(Sender: TObject);
