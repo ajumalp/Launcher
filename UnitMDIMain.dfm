@@ -25,7 +25,7 @@ object FormMDIMain: TFormMDIMain
   object lblAppListNotUpdated: TLabel
     AlignWithMargins = True
     Left = 3
-    Top = 466
+    Top = 463
     Width = 354
     Height = 14
     Cursor = crHandPoint
@@ -43,13 +43,14 @@ object FormMDIMain: TFormMDIMain
     Layout = tlCenter
     Visible = False
     OnClick = PMItemUpdateClick
+    ExplicitWidth = 254
   end
   object tvApplications: TTreeView
     AlignWithMargins = True
     Left = 3
     Top = 143
     Width = 354
-    Height = 286
+    Height = 283
     Align = alClient
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText
@@ -71,7 +72,7 @@ object FormMDIMain: TFormMDIMain
   object PanelDeveloper: TPanel
     AlignWithMargins = True
     Left = 3
-    Top = 435
+    Top = 432
     Width = 354
     Height = 25
     Cursor = crHandPoint
@@ -112,7 +113,7 @@ object FormMDIMain: TFormMDIMain
         Left = 8
         Top = 3
         Width = 38
-        Height = 26
+        Height = 23
         Margins.Left = 8
         Align = alLeft
         Caption = 'Hotkey'
@@ -123,6 +124,7 @@ object FormMDIMain: TFormMDIMain
         Font.Style = [fsBold]
         ParentFont = False
         Layout = tlCenter
+        ExplicitHeight = 13
       end
       object Label3: TLabel
         Left = 199
@@ -139,6 +141,7 @@ object FormMDIMain: TFormMDIMain
         Font.Style = [fsBold]
         ParentFont = False
         Layout = tlCenter
+        ExplicitHeight = 15
       end
       object hKeyGeneral: THotKey
         Left = 85
@@ -164,7 +167,7 @@ object FormMDIMain: TFormMDIMain
         Left = 8
         Top = 3
         Width = 66
-        Height = 24
+        Height = 21
         Margins.Left = 8
         Align = alLeft
         Caption = 'Connections'
@@ -175,6 +178,7 @@ object FormMDIMain: TFormMDIMain
         Font.Style = [fsBold]
         ParentFont = False
         Layout = tlCenter
+        ExplicitHeight = 13
       end
       object sBtnBrowseConnection: TSpeedButton
         AlignWithMargins = True
@@ -219,7 +223,7 @@ object FormMDIMain: TFormMDIMain
         Left = 8
         Top = 3
         Width = 68
-        Height = 29
+        Height = 26
         Margins.Left = 8
         Align = alLeft
         Caption = 'Recent count'
@@ -230,6 +234,7 @@ object FormMDIMain: TFormMDIMain
         Font.Style = [fsBold]
         ParentFont = False
         Layout = tlCenter
+        ExplicitHeight = 13
       end
       object Label5: TLabel
         AlignWithMargins = True
@@ -446,6 +451,10 @@ object FormMDIMain: TFormMDIMain
       object MItemImmediateUpdate: TMenuItem
         AutoCheck = True
         Caption = 'Immediate Update'
+      end
+      object MItemBattSP: TMenuItem
+        Caption = 'Enable Battery SP'
+        OnClick = MItemBattSPClick
       end
       object N5: TMenuItem
         Caption = '-'
@@ -14078,5 +14087,11 @@ object FormMDIMain: TFormMDIMain
     OnWorkComplete = bkGndFetchAppVersionDetailsWorkComplete
     Left = 128
     Top = 264
+  end
+  object TimerBatterySmartPlug: TTimer
+    Enabled = False
+    OnTimer = TimerBatterySmartPlugTimer
+    Left = 128
+    Top = 232
   end
 end

@@ -60,7 +60,9 @@ Uses
    IdTCPConnection, 
    IdTCPClient,
    ESoft.UI.Downloader,
-   IdHTTP;
+   IdHTTP, 
+   System.Actions, 
+   System.ImageList;
 
 Const
    cIMG_NONE = -1;
@@ -79,10 +81,51 @@ Const
 
    // In the order MMmmRRBB
    // M - Major, m - Minor, R - Release and B - Build { Ajmal }
-   cApplication_Version = 01000133;
-   cAppVersion = '1.0.1.33';
+   cApplication_Version = 01000134;
+   cAppVersion = '1.0.1.34';
 
 Type
+   // Forward declarations 
+   TFormMDIMain = Class;
+   
+   eTBatteryState = (ebsVeryLow, ebsLow, ebsNormal, ebsHigh, ebsFull);
+   TEBatterySmartPlug = Class   
+   Strict Private 
+      FOwner: TFormMDIMain;   
+      FRequestWaitInterval: Integer;
+      FTurnOnLevel: Integer;
+      FTurnOffLevel: Integer;
+      FTurnOnUniqueID: String;
+      FTurnOffUniqueID: String;
+
+      Function GetEnabled: Boolean;
+      Procedure SetEnabled(const aValue: Boolean);
+
+      Function GetBatteryPercent: Byte;
+      Function GetTimer: TTimer;
+      Procedure SetEnableSmartPlug(const aValue: Boolean);
+      Function GetBatteryState: eTBatteryState;
+   Public
+      FSysPowerStatus: TSystemPowerStatus;
+
+      Constructor Create(Const aOwner: TFormMDIMain);
+      Procedure Execute;
+      Function IsACInputAvailable: Boolean;
+
+      Property Owner: TFormMDIMain Read FOwner;
+      Property SysPowerStatus: TSystemPowerStatus Read FSysPowerStatus;
+      Property BatteryPercent: Byte Read GetBatteryPercent;
+      Property Timer: TTimer Read GetTimer;
+      Property BatteryState: eTBatteryState Read GetBatteryState;
+      Property EnableSmartPlug: Boolean Write SetEnableSmartPlug;
+      
+      Property Enabled: Boolean Read GetEnabled Write SetEnabled;
+      Property TurnOnLevel: Integer Read FTurnOnLevel Write FTurnOnLevel;
+      Property TurnOffLevel: Integer Read FTurnOffLevel Write FTurnOffLevel;
+      Property TurnOnUniqueID: String Read FTurnOnUniqueID Write FTurnOnUniqueID;
+      Property TurnOffUniqueID: String Read FTurnOffUniqueID Write FTurnOffUniqueID;
+   End;
+
    TFormMDIMain = Class(TForm)
       OpenDialog: TOpenDialog;
       TrayIcon: TTrayIcon;
@@ -151,6 +194,8 @@ Type
       tskDlgGetVersionDetails: TTaskDialog;
       bkGndFetchAppVersionDetails: TBackgroundWorker;
       PMItemFavorite: TMenuItem;
+      TimerBatterySmartPlug: TTimer;
+      MItemBattSP: TMenuItem;
       Procedure sBtnBrowseConnectionClick(Sender: TObject);
       Procedure edtConnectionRightButtonClick(Sender: TObject);
       Procedure FormCreate(Sender: TObject);
@@ -183,9 +228,11 @@ Type
       Procedure bkGndUpdateAppListWorkProgress(Worker: TBackgroundWorker; PercentDone: Integer);
       Procedure PanelDeveloperClick(Sender: TObject);
       Procedure bkGndFetchAppVersionDetailsWork(aWorker: TBackgroundWorker);
-      procedure bkGndFetchAppVersionDetailsWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
-      procedure tskDlgGetVersionDetailsButtonClicked(Sender: TObject; ModalResult: TModalResult; var CanClose: Boolean);
-    procedure PMItemFavoriteClick(Sender: TObject);
+      Procedure bkGndFetchAppVersionDetailsWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
+      Procedure tskDlgGetVersionDetailsButtonClicked(Sender: TObject; ModalResult: TModalResult; var CanClose: Boolean);
+      Procedure PMItemFavoriteClick(Sender: TObject);
+      Procedure TimerBatterySmartPlugTimer(aSender: TObject);
+      Procedure MItemBattSPClick(Sender: TObject);
       // Private declarations. Variables/Methods can be access inside this class and other class in the same unit. { Ajmal }
    Strict Private
       // Strict Private declarations. Variables/Methods can be access inside this class only. { Ajmal }
@@ -204,6 +251,7 @@ Type
       FCurrentProgressMessage: String;
       FPopupMenuClosed: Boolean;
       FDownloadManager: IEDownloadManager;
+      FBatterySmartPlug: TEBatterySmartPlug;
 
       Procedure OnRecentItemsChange(aSender: TObject);
       Function MenuItemApplications(Const aType: Integer = cIMG_NONE): TMenuItem;
@@ -226,12 +274,16 @@ Type
       Function GetAppGroupTemplates: TEApplicationGroups;
       Function GetParamCategories: TStringList;
       Procedure OpenParentFolderClick(aSender: TObject);
+      Function GetBatterySmartPlug: TEBatterySmartPlug;
    protected
       procedure WndProc(var aMessage: TMessage); override;
       procedure WMHotKey(var Msg: TWMHotKey); Message WM_HOTKEY;
       procedure WMDropFiles(var aMessage: TWMDropFiles); Message WM_DROPFILES;
    Public
       { Public declarations }
+      Constructor Create(aOwner: TComponent); override;
+      Destructor Destroy; override;
+
       Procedure LoadConfig;
       Procedure SaveConfig;
       Function BackupFolder: String;
@@ -240,8 +292,11 @@ Type
       Procedure ReloadFromIni;
       Procedure RunApplication(Const aName, aExecutableName, aParameter, aSourcePath: String;
         aSkipFromRecent: Boolean; Const aRunAsAdmin: TCheckBoxState);
-      procedure LoadParamCategories;
+      Procedure LoadParamCategories;
+      Procedure ShowTrayNotification(Const aMessage: String; Const aMsgType: TBalloonFlags = bfInfo);
 
+      Property BatterySmartPlug: TEBatterySmartPlug Read GetBatterySmartPlug;
+      Property BatterySPTimer: TTimer Read TimerBatterySmartPlug;
       Property RecentItems: TERecentItems Read GetRecentItems;
    Published
       Property AppGroups: TEApplicationGroups Read GetAppGroups;
@@ -315,7 +370,16 @@ Const
    cConfigGroupItems = 'GroupItems';
    cConfigImediateUpdate = 'ImediateUpdate';
 
+   cConfigSPBattery = 'Smart Plug (Battery)';
+   cConfigSPBEnabled = 'Enabled';
+   cConfigSPBMinThreshold = 'MinThreshold';
+   cConfigSPBMaxThreshold = 'MaxThreshold';
+   cConfigSPBONUID = 'ONUniqueID';
+   cConfigSPBOFFUID = 'OFFUniqueID';
+
    cBackups = 'Backups\';
+
+   cURL_API_BASE = 'https://saapp.erratums.com/api.php';
 
 Resourcestring
    rsClearRecentItems = 'Clear';
@@ -416,10 +480,10 @@ Begin
    End;
 End;
 
-procedure TFormMDIMain.bkGndFetchAppVersionDetailsWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
-begin
+Procedure TFormMDIMain.bkGndFetchAppVersionDetailsWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
+Begin
   tskDlgGetVersionDetails.Buttons[0].Click;
-end;
+End;
 
 procedure TFormMDIMain.bkGndUpdateAppListWork(Worker: TBackgroundWorker);
 begin
@@ -514,7 +578,7 @@ End;
 
 Procedure TFormMDIMain.FormHide(Sender: TObject);
 Begin
-   TrayIcon.ShowBalloonHint;
+   ShowTrayNotification('Developed by Muhammad Ajmal P');
 End;
 
 Function TFormMDIMain.GetAppGroups: TEApplicationGroups;
@@ -537,6 +601,13 @@ Begin
    End;
 
    Result := FTemplateGroups;
+End;
+
+Function TFormMDIMain.GetBatterySmartPlug: TEBatterySmartPlug;
+Begin
+   If Not Assigned(FBatterySmartPlug) Then 
+      FBatterySmartPlug := TEBatterySmartPlug.Create(Self);
+   Result := FBatterySmartPlug;
 End;
 
 Function TFormMDIMain.GetClipboardItems: TEClipboardItems;
@@ -659,6 +730,12 @@ Begin
       hKeyGeneral.HotKey := TextToShortCut(varIniFile.ReadString(cConfigBasic, cConfigHotKey, cConfigDefaultHotKeyText));
       sEdtRecentItemCount.Value := varIniFile.ReadInteger(cConfigBasic, cConfigRecentCount, 5);
       cbGroupItems.ItemIndex := varIniFile.ReadInteger(cConfigBasic, cConfigGroupItems, cGroupVisible_None);
+
+      BatterySmartPlug.Enabled := varIniFile.ReadBool(cConfigSPBattery, cConfigSPBEnabled, False);
+      BatterySmartPlug.TurnOnLevel := varIniFile.ReadInteger(cConfigSPBattery, cConfigSPBMinThreshold, 20);
+      BatterySmartPlug.TurnOffLevel := varIniFile.ReadInteger(cConfigSPBattery, cConfigSPBMaxThreshold, 100);
+      BatterySmartPlug.TurnOnUniqueID := varIniFile.ReadString(cConfigSPBattery, cConfigSPBONUID, '');
+      BatterySmartPlug.TurnOffUniqueID := varIniFile.ReadString(cConfigSPBattery, cConfigSPBOFFUID, '');
    Finally
       varIniFile.Free;
    End;
@@ -728,6 +805,13 @@ Begin
    End;
 End;
 
+Destructor TFormMDIMain.Destroy;
+Begin
+   FreeAndNil(FBatterySmartPlug);
+
+   Inherited;
+End;
+
 Procedure TFormMDIMain.MItemBackupClick(Sender: TObject);
 Var
    varZipFile: TZipFile;
@@ -762,6 +846,12 @@ Begin
    End;
 End;
 
+Procedure TFormMDIMain.MItemBattSPClick(Sender: TObject);
+Begin
+   BatterySPTimer.Enabled := Not BatterySPTimer.Enabled;
+   MItemBattSP.Checked := BatterySPTimer.Enabled;    
+End;
+
 Procedure TFormMDIMain.MItemShowHideSettingsClick(Sender: TObject);
 Begin
    grpSettings.Visible := MItemShowHideSettings.Checked;
@@ -789,6 +879,13 @@ Begin
 
    RecentItems.Clear;
    PMItemRecentItems.Clear;
+End;
+
+Constructor TFormMDIMain.Create(aOwner: TComponent);
+Begin
+   Inherited;
+
+   FBatterySmartPlug := Nil;
 End;
 
 Procedure TFormMDIMain.OnRecentItemsChange(aSender: TObject);
@@ -1018,10 +1115,10 @@ Begin
    Application.Terminate;
 End;
 
-procedure TFormMDIMain.PMItemFavoriteClick(Sender: TObject);
-begin
-  raise Exception.Create('Funtionality not implimented yet.');
-end;
+Procedure TFormMDIMain.PMItemFavoriteClick(Sender: TObject);
+Begin
+  Raise Exception.Create('Funtionality not implimented yet.');
+End;
 
 Procedure TFormMDIMain.PanelDeveloperClick(Sender: TObject);
 Begin
@@ -1174,6 +1271,17 @@ Begin
          varIniFile.WriteString(cConfigBasic, cConfigFileName, '')
       Else
          varIniFile.WriteString(cConfigBasic, cConfigFileName, Connections.FileName);
+
+      // Currently all these value can be changed from Ini file only
+      // So only write these values if secton never exist { Ajmal }
+      If Not varIniFile.SectionExists(cConfigSPBattery) Then
+      Begin
+        varIniFile.WriteInteger(cConfigSPBattery, cConfigSPBMinThreshold, BatterySmartPlug.TurnOnLevel);
+        varIniFile.WriteInteger(cConfigSPBattery, cConfigSPBMaxThreshold, BatterySmartPlug.TurnOffLevel);
+        varIniFile.WriteString(cConfigSPBattery, cConfigSPBONUID, BatterySmartPlug.TurnOnUniqueID);
+        varIniFile.WriteString(cConfigSPBattery, cConfigSPBOFFUID, BatterySmartPlug.TurnOffUniqueID);
+      End;
+      varIniFile.WriteBool(cConfigSPBattery, cConfigSPBEnabled, BatterySmartPlug.Enabled);
    Finally
       varIniFile.Free;
    End;
@@ -1191,6 +1299,18 @@ End;
 Procedure TFormMDIMain.SetRunAsAdmin(Const aValue: Boolean);
 Begin
    PMItemRunasAdministrator.Checked := aValue;
+End;
+
+Procedure TFormMDIMain.ShowTrayNotification(const aMessage: String; Const aMsgType: TBalloonFlags);
+Begin
+   TrayIcon.BalloonFlags := aMsgType;
+   TrayIcon.BalloonHint := aMessage;
+   TrayIcon.ShowBalloonHint;
+End;
+
+Procedure TFormMDIMain.TimerBatterySmartPlugTimer(aSender: TObject);
+Begin
+   BatterySmartPlug.Execute;
 End;
 
 Procedure TFormMDIMain.tskDlgGetVersionDetailsButtonClicked(Sender: TObject; ModalResult: TModalResult; var CanClose: Boolean);
@@ -1693,6 +1813,135 @@ Begin
    Except
       // Do nothing. It's not easily possible to handle all the issues related to shell execute. { Ajmal }
    End;
+End;
+
+{ TEBatterySmartPlug }
+
+Constructor TEBatterySmartPlug.Create(Const aOwner: TFormMDIMain);
+Begin
+   FOwner := aOwner;
+   Timer.Interval := 1000;
+   Enabled := False;
+   
+   FRequestWaitInterval := 0;
+   FTurnOnLevel := 20;
+   FTurnOffLevel := 100;
+   FTurnOnUniqueID := EmptyStr;
+   FTurnOffUniqueID := EmptyStr;
+End;
+
+Function TEBatterySmartPlug.IsACInputAvailable: Boolean;
+Begin
+   Result := SysPowerStatus.ACLineStatus = 1;
+End;
+
+Procedure TEBatterySmartPlug.SetEnabled(const aValue: Boolean);
+Begin
+   Timer.Enabled := aValue;
+   Owner.MItemBattSP.Checked := aValue;
+End;
+
+Procedure TEBatterySmartPlug.SetEnableSmartPlug(const aValue: Boolean);
+Var
+   varIDHttp: TIdHTTP;
+   varParams: TStrings;
+Begin
+   // Check input power is already in smae state { Ajmal }
+   If IsACInputAvailable = aValue Then 
+      Exit;
+
+   If (Timer.Interval <> 1000) Then
+   Begin
+      FRequestWaitInterval := 0;
+   End
+   Else If FRequestWaitInterval > 0 Then
+   Begin
+      Dec(FRequestWaitInterval);
+      Exit;
+   End;
+      
+   varParams := TStringList.Create;
+   varIDHttp := TIdHTTP.Create(Owner);
+   Try
+      varParams.Values['uid'] := IfThen(aValue, TurnOnUniqueID, TurnOffUniqueID);
+      Try
+         If varIDHttp.Post(cURL_API_BASE, varParams).Equals('True') Then 
+         Begin
+            // The request is successful, so wait for 5 secs before next request { Ajmal }
+            FRequestWaitInterval := 5;
+            Owner.ShowTrayNotification('Request send to turn ' + IfThen(aValue, 'ON', 'Off') + ' smart plug');
+         End
+         Else
+         Begin
+            Owner.ShowTrayNotification('Request to turn ' + IfThen(aValue, 'ON', 'Off') + ' smart plug failed', bfError);
+         End;
+      Except
+         Enabled := False;
+         Raise;
+      End;
+   Finally
+      varIDHttp.Free;
+      varParams.Free;
+   End;
+End;
+
+Procedure TEBatterySmartPlug.Execute;
+Begin
+   If Not Enabled Then
+      Exit;
+
+   If Not GetSystemPowerStatus(FSysPowerStatus) Then
+      Exit;
+
+   If Timer.Interval <> 1000 Then 
+   Begin                                                                         
+      // If the battery level is near to threshold, check every sec { Ajaml }
+      If IfThen(IsACInputAvailable, BatteryState = ebsHigh, BatteryState in [ebsVeryLow, ebsLow]) = True Then 
+        Timer.Interval := 1000;
+   End
+   Else
+   Begin
+      If IfThen(IsACInputAvailable, BatteryState in [ebsVeryLow, ebsLow], BatteryState = ebsHigh) = True Then 
+        Timer.Interval := 10000;
+
+      If BatteryState in [ebsNormal, ebsFull] Then 
+         Timer.Interval := 10000;   
+   End;
+   
+   If BatteryPercent in [0 .. TurnOnLevel] Then  
+      EnableSmartPlug := True
+   Else If BatteryPercent in [TurnOffLevel .. 100] Then
+      EnableSmartPlug := False;
+End;
+
+Function TEBatterySmartPlug.GetBatteryPercent: Byte;
+Begin
+   Result := SysPowerStatus.BatteryLifePercent;
+End;
+
+Function TEBatterySmartPlug.GetBatteryState: eTBatteryState;
+Const cBatteryLevelAdjust = 3;
+Begin
+   If BatteryPercent >= 100 Then
+      Result := ebsFull
+   Else If BatteryPercent <= TurnOnLevel Then 
+      Result := ebsVeryLow
+   Else If BatteryPercent in [TurnOnLevel .. (TurnOnLevel + cBatteryLevelAdjust)] Then
+      Result := ebsLow
+   Else If BatteryPercent in [(TurnOffLevel - cBatteryLevelAdjust) .. TurnOffLevel] Then
+      Result := ebsHigh
+   Else 
+      Result := ebsNormal;
+End;
+
+Function TEBatterySmartPlug.GetEnabled: Boolean;
+Begin
+   Result := Timer.Enabled;
+End;
+
+Function TEBatterySmartPlug.GetTimer: TTimer;
+Begin
+   Result := Owner.BatterySPTimer;
 End;
 
 End.
