@@ -23,7 +23,8 @@ uses
   ESoft.UI.Downloader in 'ESoft.UI.Downloader.pas' {FormDownloader},
   ESoft.Launcher.PopupList in 'ESoft.Launcher.PopupList.pas',
   ESoft.Launcher.UI.ErrorViewer in 'ESoft.Launcher.UI.ErrorViewer.pas' {FormExceptionHandler},
-  ESoft.Launcher.FavouriteItems in 'ESoft.Launcher.FavouriteItems.pas';
+  ESoft.Launcher.FavouriteItems in 'ESoft.Launcher.FavouriteItems.pas',
+  ESoft.Launcher.DM.Main in 'ESoft.Launcher.DM.Main.pas' {dmMain: TDataModule};
 
 {$R *.res}
 

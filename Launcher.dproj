@@ -99,11 +99,11 @@
         <DCC_UnitSearchPath>$(ES_DELPHICONTROLS);3rd Party\JCL\source\windows;3rd Party\JCL\source\common;3rd Party\JCL\source\include;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Icon_MainIcon>res\Images\EG_Icon.ico</Icon_MainIcon>
         <Debugger_IncludeSystemVars>true</Debugger_IncludeSystemVars>
-        <VerInfo_Build>35</VerInfo_Build>
+        <VerInfo_Build>38</VerInfo_Build>
         <DCC_Define>AbbreviaZipper;$(DCC_Define)</DCC_Define>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=Erratum Solutions;FileDescription=Easy App Launcher;FileVersion=1.0.1.35;InternalName=Application Launcher;LegalCopyright=Copyright @ 2020;LegalTrademarks=;OriginalFilename=;ProductName=Launcher;ProductVersion=1.0.1.35;Comments=Developed by Muhammad Ajmal P;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=Erratum Solutions;FileDescription=Easy App Launcher;FileVersion=1.0.1.38;InternalName=Application Launcher;LegalCopyright=Copyright @ 2020;LegalTrademarks=;OriginalFilename=;ProductName=Launcher;ProductVersion=1.0.1.38;Comments=Developed by Muhammad Ajmal P;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <BT_BuildType>Debug</BT_BuildType>
@@ -157,6 +157,11 @@
             <Form>FormExceptionHandler</Form>
         </DCCReference>
         <DCCReference Include="ESoft.Launcher.FavouriteItems.pas"/>
+        <DCCReference Include="ESoft.Launcher.DM.Main.pas">
+            <Form>dmMain</Form>
+            <FormType>dfm</FormType>
+            <DesignClass>TDataModule</DesignClass>
+        </DCCReference>
         <None Include="Launcher.manifest"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
@@ -211,7 +216,19 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="3">
+                <DeployFile LocalName="Win32\Debug\Launcher.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>Launcher.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Win32\Debug\Launcher.exe" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Launcher.manifest" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
