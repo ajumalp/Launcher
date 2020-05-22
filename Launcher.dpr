@@ -5,6 +5,8 @@ Program Launcher;
 { ajumalp@gmail.com }
 { ---------------------------------------------------------- }
 
+{$R *.dres}
+
 uses
   System.SysUtils,
   Vcl.Forms,

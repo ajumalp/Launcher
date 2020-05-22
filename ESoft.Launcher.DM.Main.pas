@@ -11,6 +11,7 @@ Uses
    Vcl.Forms,
    System.SysUtils,
    System.Classes,
+   System.Types,
    Data.DbxSqlite,
    Data.DB,
    Vcl.Dialogs,
@@ -35,7 +36,7 @@ Type
    TESTDBChildNodes = Class;
 
    eSTDBItemStatus = (sdsActive, sdsDeleted, sdsInActive);
-   eSTDBItemState = (sdsNew, sdsUpdating);
+   eSTDBItemState = (sdsBrowse, sdsNew, sdsUpdating);
 
    IESTDBNode = Interface
       Function GetOID: Int64;
@@ -48,14 +49,14 @@ Type
       Function GetAsInteger: Integer;
       Function GetAsBoolean: Boolean;
       Function GetChildNode(aNodeName: String): IESTDBNode;
-      Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode; 
+      Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
+      Function GetState: eSTDBItemState;
       Function GetIsLastChild: Boolean;
-      
+
       Function IsRootNode: Boolean;
       Function HasData: Boolean;
       Function FirstChild: IESTDBNode;
       Function NextChild: IESTDBNode;
-      Procedure Post;
       Procedure Clear;
 
       Property OID: Int64 Read GetOID;
@@ -63,9 +64,10 @@ Type
       Property Name: String Read GetName;
       Property Status: eSTDBItemStatus Read GetStatus;
 
+      Property State: eSTDBItemState Read GetState;
       Property IsLastChild: Boolean Read GetIsLastChild;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
-      Property ChildNodeEx[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx;
+      Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
 
       Property Value: Variant Read GetValue Write SetValue;
       Property AsString: String Read GetAsString;
@@ -100,6 +102,7 @@ Type
       Function GetState: eSTDBItemState; 
       Function Locate(Const aKeys: Array Of String; Const aValues: Array Of Variant): Boolean; Overload;
       Function Locate: Boolean; Overload;
+      Procedure Post;
    Strict Protected
       Function GetOID: Int64; Virtual;
       Function GetParentID: Int64; Virtual;
@@ -115,7 +118,6 @@ Type
       Function HasData: Boolean;
       Function FirstChild: IESTDBNode;
       Function NextChild: IESTDBNode;      
-      Procedure Post;
       Procedure Clear;
 
       Property OID: Int64 Read GetOID;
@@ -127,7 +129,7 @@ Type
       Property State: eSTDBItemState Read GetState;
       Property IsLastChild: Boolean Read GetIsLastChild;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
-      Property ChildNodeEx[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx;
+      Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
       
       Property AsString: String Read GetAsString;
       Property AsInteger: Integer Read GetAsInteger;
@@ -148,13 +150,15 @@ Type
    TESTDatabase = Class
    Strict Private
       FDataModule: TdmMain;    
-      FRootNode: IESTDBNode;      
+      FRootNode: IESTDBNode;     
+      FNextOID: Int64; 
       
       Function GetDataModule: TdmMain;
       Function GetRootNode: IESTDBNode;
       Function GetGeneralDSet: TClientDataSet;
       Function GetChildNode(aNodeName: String): IESTDBNode;
       Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
+      Procedure ExtractDatabaseFile;
       
       Property DataModule: TdmMain Read GetDataModule;
       Property GeneralDSet: TClientDataSet Read GetGeneralDSet;
@@ -164,22 +168,26 @@ Type
 
       Procedure ReloadData;
       Function ApplyUpdates: Integer;
+      Function NextOID: Int64;
+      Procedure ResetObjectIDPK;
+      Function ExecuteQuery(Const aQuery: String): Variant;
 
-      Property RootNode: IESTDBNode Read GetRootNode; 
+      Property RootNode: IESTDBNode Read GetRootNode;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
-      Property ChildNodeEx[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; 
+      Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
    End;
 
    TdmMain = Class(TDataModule)
-      clntDSetRTDBMain: TClientDataSet;
-      dsProRTDBMain: TDataSetProvider;
+      clntDSetSTDBMain: TClientDataSet;
+      dsProSTDBMain: TDataSetProvider;
       SQLCnnMain: TADOConnection;
-      qryRTDBMain: TADOQuery;
+      qrySTDBMain: TADOQuery;
+      qryGeneral: TADOQuery;
 
       Procedure DataModuleCreate(Sender: TObject);
    Public
       Function BuildConnectionString(Const aDatabase: String): String;
-      Property GeneralDSet: TClientDataSet Read clntDSetRTDBMain;
+      Property GeneralDSet: TClientDataSet Read clntDSetSTDBMain;
    End;
 
    Function STDatabase: TESTDatabase;
@@ -194,7 +202,7 @@ Var
    _STDatabase: TESTDatabase = Nil;
 Function STDatabase: TESTDatabase;
 Begin
-   If Not Assigned(_STDatabase) Then 
+   If Not Assigned(_STDatabase) Then
       _STDatabase := TESTDatabase.Create;
    Result := _STDatabase;
 End;
@@ -230,12 +238,17 @@ End;
 Function TESTDatabase.ApplyUpdates: Integer;
 begin
    Result := GeneralDSet.ApplyUpdates(0);
+
+   ReloadData;
+   If FNextOID <> -1 Then
+      ResetObjectIDPK;
 end;
 
 Constructor TESTDatabase.Create;
 Begin
+   FNextOID := -1;
    FDataModule := Nil;
-   FRootNode := TESTDBRootNode.Create(GeneralDSet);
+   FRootNode := Nil;   
 End;
 
 destructor TESTDatabase.Destroy;
@@ -246,20 +259,45 @@ begin
    Inherited;
 end;
 
+Function TESTDatabase.ExecuteQuery(const aQuery: String): Variant;
+Begin
+   Result := Null;
+   DataModule.qryGeneral.Close;
+   DataModule.qryGeneral.SQL.Text := aQuery;
+   DataModule.qryGeneral.Open;
+   If Not DataModule.qryGeneral.IsEmpty Then
+      Result := DataModule.qryGeneral.Fields[0].AsVariant;
+End;
+
+Procedure TESTDatabase.ExtractDatabaseFile;
+Var
+  varResStream: TResourceStream;
+Begin
+  varResStream := TResourceStream.Create(HInstance, 'SQLITE_DB', RT_RCDATA);
+  try
+    varResStream.Position := 0;
+    varResStream.SaveToFile(ExtractFilePath(ParamStr(0)) + 'launcher.db3');
+  finally
+    varResStream.Free;
+  end;
+End;
+
 Function TESTDatabase.GetChildNode(aNodeName: String): IESTDBNode;
 Begin
-   Result := RootNode.ChildNode[aNodeName];
+   Result := RootNode[aNodeName];
 End;
 
 Function TESTDatabase.GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
 Begin
-   Result := RootNode.ChildNodeEx[aNodeName, aDefaultValue];   
+   Result := RootNode[aNodeName, aDefaultValue];
 End;
 
 Function TESTDatabase.GetDataModule: TdmMain;
 Begin
    If Not Assigned(FDataModule) Then
    Begin
+      If Not FileExists(ExtractFilePath(ParamStr(0)) + 'launcher.db3') Then 
+         ExtractDatabaseFile;
       FDataModule := TdmMain.Create(Nil);
       ReloadData;
    End;
@@ -268,7 +306,21 @@ End;
 
 Function TESTDatabase.GetRootNode: IESTDBNode;
 Begin
+   If Not Assigned(FRootNode) Then 
+      FRootNode := TESTDBRootNode.Create(GeneralDSet);
    Result := FRootNode;
+End;
+
+Function TESTDatabase.NextOID: Int64;
+Begin
+   If FNextOID = -1 Then
+   Begin
+      FNextOID := ExecuteQuery('SELECT MAX(OID) + 1 AS NEXTOID FROM STDBMAIN');
+      Exit(FNextOID);
+   End;
+
+   Inc(FNextOID);
+   Result := FNextOID;
 End;
 
 Function TESTDatabase.GetGeneralDSet: TClientDataSet;
@@ -281,6 +333,15 @@ Begin
    If GeneralDSet.Active Then 
       GeneralDSet.Close;
    GeneralDSet.Open;
+   // Set nill to free and existing objects { Ajmal }
+   FRootNode := Nil;
+End;
+
+Procedure TESTDatabase.ResetObjectIDPK;
+Const 
+   cSQL_RESET_OID = 'UPDATE sqlite_sequence SET SEQ = (SELECT MAX(OID) FROM STDBMAIN) WHERE NAME = "STDBMAIN"';
+Begin
+   DataModule.SQLCnnMain.Execute(cSQL_RESET_OID);
 End;
 
 { TESTDBNode }
@@ -348,20 +409,21 @@ End;
 
 Function TESTDBNode.GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
 Begin
-   If Not FChildNodes.ContainsKey(aNodeName) Then 
+   If Not FChildNodes.ContainsKey(aNodeName) Then
       FChildNodes.Add(aNodeName, TESTDBNode.Create(FDataset, OID, aNodeName));
    Result := FChildNodes.Items[aNodeName];
 
-   If Not Locate([cDB_FIELD_PARENTID, cDB_FIELD_NAME], [OID, aNodeName]) Then 
+   If Not Locate([cDB_FIELD_PARENTID, cDB_FIELD_NAME], [OID, aNodeName]) Then
    Begin
       FDataset.Append;
+      FDataset.FieldByName(cDB_FIELD_OID).ReadOnly := False;
+      FDataset.FieldByName(cDB_FIELD_OID).Value := STDatabase.NextOID;
       FDataset.FieldByName(cDB_FIELD_PARENTID).AsLargeInt := OID;
-      FDataset.FieldByName(cDB_FIELD_NAME).AsString := aNodeName;      
+      FDataset.FieldByName(cDB_FIELD_NAME).AsString := aNodeName;
       FDataset.FieldByName(cDB_FIELD_VALUE).Value := aDefaultValue;
       FDataset.Post;
       
       Result.Value := aDefaultValue;
-      Result.Post;
    End;
 End;
 
@@ -392,7 +454,13 @@ Function TESTDBNode.GetState: eSTDBItemState;
 Begin
    Result := sdsNew;       
    If Locate([cDB_FIELD_PARENTID, cDB_FIELD_NAME], [ParentID, Name]) Then
-      Result := sdsUpdating;
+   Begin
+      Case FDataset.UpdateStatus Of
+         usInserted: Result := sdsNew;
+         usModified: Result := sdsUpdating;
+         usUnmodified: Result := sdsBrowse;
+      End;
+   End;
 End;
 
 Function TESTDBNode.GetStatus: eSTDBItemStatus;
@@ -497,7 +565,7 @@ Begin
   If Locate Then FDataset.Edit
   Else FDataset.Append;
 
-  FDataset.FieldByName(cDB_FIELD_VALUE).Value := Value;
+  FDataset.FieldByName(cDB_FIELD_VALUE).Value := FValue;
   FDataset.Post;
 End;
 
@@ -505,6 +573,7 @@ Procedure TESTDBNode.SetValue(const aValue: Variant);
 Begin
    LoadData;
    FValue := aValue;   
+   Post;
 End;
 
 { TESTDBRootNode }

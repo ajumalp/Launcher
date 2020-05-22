@@ -1,17 +1,17 @@
 object dmMain: TdmMain
   OldCreateOrder = False
   OnCreate = DataModuleCreate
-  Height = 137
+  Height = 195
   Width = 223
-  object clntDSetRTDBMain: TClientDataSet
+  object clntDSetSTDBMain: TClientDataSet
     Aggregates = <>
     Params = <>
-    ProviderName = 'dsProRTDBMain'
+    ProviderName = 'dsProSTDBMain'
     Left = 144
     Top = 72
   end
-  object dsProRTDBMain: TDataSetProvider
-    DataSet = qryRTDBMain
+  object dsProSTDBMain: TDataSetProvider
+    DataSet = qrySTDBMain
     Left = 40
     Top = 72
   end
@@ -24,12 +24,18 @@ object dmMain: TdmMain
     Left = 40
     Top = 16
   end
-  object qryRTDBMain: TADOQuery
+  object qrySTDBMain: TADOQuery
     Connection = SQLCnnMain
     Parameters = <>
     SQL.Strings = (
-      'SELECT * FROM RTDBMAIN ORDER BY PARENTID, OID')
+      'SELECT * FROM STDBMAIN ORDER BY PARENTID, OID')
     Left = 144
     Top = 16
+  end
+  object qryGeneral: TADOQuery
+    Connection = SQLCnnMain
+    Parameters = <>
+    Left = 40
+    Top = 128
   end
 end

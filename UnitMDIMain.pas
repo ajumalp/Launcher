@@ -30,7 +30,6 @@ Uses
    Generics.Collections,
    Vcl.Buttons,
    Vcl.Menus,
-   Vcl.FileCtrl,
    Vcl.AppEvnts,
    Vcl.ComCtrls,
    ESoft.Launcher.Application,
@@ -77,12 +76,16 @@ Const
    cClipbord_Data = 'ClpBrd.edat';
    cConnectionState = 'CONNECTION_STATE';
 
+   cSTDBNodeConfig = 'Config';
+   cSTDBNodeGroups = 'Groups';
+   cSTDBNodeParams = 'Params';
+
    cMenuSeperatorCaption = '-';
 
    // In the order MMmmRRBB
    // M - Major, m - Minor, R - Release and B - Build { Ajmal }
-   cApplication_Version = 01000135;
-   cAppVersion = '1.0.1.35';
+   cApplication_Version = 01000138;
+   cAppVersion = '1.0.1.38';
 
 Type
    // Forward declarations 
@@ -238,7 +241,6 @@ Type
       // Strict Private declarations. Variables/Methods can be access inside this class only. { Ajmal }
       FFixedMenuItems: TList<TMenuItem>;
       FHotKeyMain: NativeUInt;
-      FLastUsedParamCode: String;
       FParameters: TEParameters;
       FInitialized: Boolean;
       FAppGroups, FTemplateGroups: TEApplicationGroups;
@@ -252,6 +254,7 @@ Type
       FPopupMenuClosed: Boolean;
       FDownloadManager: IEDownloadManager;
       FBatterySmartPlug: TEBatterySmartPlug;
+      FUseDatabase: Boolean;
 
       Procedure OnRecentItemsChange(aSender: TObject);
       Function MenuItemApplications(Const aType: Integer = cIMG_NONE): TMenuItem;
@@ -286,6 +289,7 @@ Type
 
       Procedure LoadConfig;
       Procedure SaveConfig;
+      Procedure LoadConfigFromDB;
       Function BackupFolder: String;
       Procedure UpdateApplicationListInBackGround;
       Procedure UpdateApplicationList(const aForceUpdate: Boolean = False);
@@ -308,6 +312,7 @@ Type
       Property DisplayLabels: TStringList Read GetDisplayLabels;
       Property ParamCategories: TStringList Read GetParamCategories;
       Property ClipboardItems: TEClipboardItems Read GetClipboardItems;
+      Property UseDatabase: Boolean Read FUseDatabase;
    End;
 
 Var
@@ -321,7 +326,8 @@ Uses
    ESoft.Launcher.UI.AppGroupEditor,
    ESoft.Launcher.UI.ParamBrowser,
    ESoft.Launcher.UI.BackupRestore,
-   ESoft.Launcher.UI.ClipboardBrowser;
+   ESoft.Launcher.UI.ClipboardBrowser,
+   ESoft.Launcher.DM.Main;
 
 Const
    cIMG_DELETE = 4;
@@ -369,6 +375,7 @@ Const
    cConfigRecentCount = 'RecentItemsCount';
    cConfigGroupItems = 'GroupItems';
    cConfigImediateUpdate = 'ImediateUpdate';
+   cConfigUseDB = 'UseDatabase';
 
    cConfigSPBattery = 'Smart Plug (Battery)';
    cConfigSPBEnabled = 'Enabled';
@@ -526,6 +533,8 @@ Procedure TFormMDIMain.FormCreate(Sender: TObject);
 Var
    iCntr: Integer;
 Begin
+   PMItemFavorite.Visible := False;
+   Caption := 'Launcher [' + cAppVersion + ']';
    FPopupMenuClosed := True;
    DragAcceptFiles(Handle, True);
    // Store the permenent menu into FixedItem list. { Ajmal }
@@ -719,26 +728,72 @@ End;
 Procedure TFormMDIMain.LoadConfig;
 Var
    varIniFile: TIniFile;
+   varConfigNode: IESTDBNode;
+
+   Procedure _CopyToDB(Const aParentNode, aNodeName: String; Const aDefaultValue: Variant);
+   Var
+      varNode: IESTDBNode;
+   Begin
+      varNode := varConfigNode[aParentNode].ChildNode[aNodeName];
+      Case VarType(aDefaultValue) Of
+         varBoolean: varNode.Value := varIniFile.ReadBool(aParentNode, aNodeName, aDefaultValue);
+         varByte, varInteger: varNode.Value := varIniFile.ReadInteger(aParentNode, aNodeName, aDefaultValue);
+         Else varNode.Value := varIniFile.ReadString(aParentNode, aNodeName, aDefaultValue);
+      End;
+   End;
+
 Begin
    varIniFile := TIniFile.Create(ParentFolder + cConfig_INI);
    Try
-      MItemAutobackup.Checked := varIniFile.ReadBool(cConfigBasic, cConfigAutoBackUpOnExit, False);
-      MItemStartMinimized.Checked := varIniFile.ReadBool(cConfigBasic, cConfigStartMinimized, True);
-      MItemImmediateUpdate.Checked := varIniFile.ReadBool(cConfigBasic, cConfigImediateUpdate, True);
-      IsRunAsAdmin := varIniFile.ReadBool(cConfigBasic, cConfigRunAsAdmin, False);
-      Connections.FileName := varIniFile.ReadString(cConfigBasic, cConfigFileName, '');
-      hKeyGeneral.HotKey := TextToShortCut(varIniFile.ReadString(cConfigBasic, cConfigHotKey, cConfigDefaultHotKeyText));
-      sEdtRecentItemCount.Value := varIniFile.ReadInteger(cConfigBasic, cConfigRecentCount, 5);
-      cbGroupItems.ItemIndex := varIniFile.ReadInteger(cConfigBasic, cConfigGroupItems, cGroupVisible_None);
+      FUseDatabase := varIniFile.ReadBool(cConfigBasic, cConfigUseDB, True);
+      If varIniFile.SectionExists(cConfigBasic) And (Not STDatabase[cSTDBNodeConfig, False].AsBoolean) Then
+      Begin
+         varConfigNode := STDatabase[cSTDBNodeConfig];
 
-      BatterySmartPlug.Enabled := varIniFile.ReadBool(cConfigSPBattery, cConfigSPBEnabled, False);
-      BatterySmartPlug.TurnOnLevel := varIniFile.ReadInteger(cConfigSPBattery, cConfigSPBMinThreshold, 20);
-      BatterySmartPlug.TurnOffLevel := varIniFile.ReadInteger(cConfigSPBattery, cConfigSPBMaxThreshold, 100);
-      BatterySmartPlug.TurnOnUniqueID := varIniFile.ReadString(cConfigSPBattery, cConfigSPBONUID, '');
-      BatterySmartPlug.TurnOffUniqueID := varIniFile.ReadString(cConfigSPBattery, cConfigSPBOFFUID, '');
+         _CopyToDB(cConfigBasic, cConfigAutoBackUpOnExit, False);
+         _CopyToDB(cConfigBasic, cConfigStartMinimized, True);
+         _CopyToDB(cConfigBasic, cConfigImediateUpdate, True);
+         _CopyToDB(cConfigBasic, cConfigRunAsAdmin, False);
+         _CopyToDB(cConfigBasic, cConfigFileName, '');
+         _CopyToDB(cConfigBasic, cConfigHotKey, cConfigDefaultHotKeyText);
+         _CopyToDB(cConfigBasic, cConfigRecentCount, 5);
+         _CopyToDB(cConfigBasic, cConfigGroupItems, cGroupVisible_None);
+
+         _CopyToDB(cConfigSPBattery, cConfigSPBEnabled, False);
+         _CopyToDB(cConfigSPBattery, cConfigSPBMinThreshold, 20);
+         _CopyToDB(cConfigSPBattery, cConfigSPBMaxThreshold, 100);
+         _CopyToDB(cConfigSPBattery, cConfigSPBONUID, '');
+         _CopyToDB(cConfigSPBattery, cConfigSPBOFFUID, '');
+
+         varConfigNode.Value := True;
+         STDatabase.ApplyUpdates;
+      End;
+      LoadConfigFromDB;
    Finally
       varIniFile.Free;
    End;
+End;
+
+Procedure TFormMDIMain.LoadConfigFromDB;
+Var
+   varSTDBNode: IESTDBNode;
+Begin
+   varSTDBNode := STDatabase[cSTDBNodeConfig].ChildNode[cConfigBasic];
+   MItemAutobackup.Checked := varSTDBNode[cConfigAutoBackUpOnExit, False].AsBoolean;
+   MItemStartMinimized.Checked := varSTDBNode[cConfigStartMinimized, True].AsBoolean;
+   MItemImmediateUpdate.Checked := varSTDBNode[cConfigImediateUpdate, True].AsBoolean;
+   IsRunAsAdmin := varSTDBNode[cConfigRunAsAdmin, False].AsBoolean;
+   Connections.FileName := varSTDBNode[cConfigFileName, ''].AsString;
+   hKeyGeneral.HotKey := TextToShortCut(varSTDBNode[cConfigHotKey, cConfigDefaultHotKeyText].AsString);
+   sEdtRecentItemCount.Value := varSTDBNode[cConfigRecentCount, 5].AsInteger;
+   cbGroupItems.ItemIndex := varSTDBNode[cConfigGroupItems, cGroupVisible_None].AsInteger;
+
+   varSTDBNode := STDatabase[cSTDBNodeConfig].ChildNode[cConfigSPBattery];
+   BatterySmartPlug.Enabled := varSTDBNode[cConfigSPBEnabled, False].AsBoolean;
+   BatterySmartPlug.TurnOnLevel := varSTDBNode[cConfigSPBMinThreshold, 20].AsInteger;
+   BatterySmartPlug.TurnOffLevel := varSTDBNode[cConfigSPBMaxThreshold, 100].AsInteger;
+   BatterySmartPlug.TurnOnUniqueID := varSTDBNode[cConfigSPBONUID, ''].AsString;
+   BatterySmartPlug.TurnOffUniqueID := varSTDBNode[cConfigSPBOFFUID, ''].AsString;
 End;
 
 Function TFormMDIMain.MenuItemApplications(Const aType: Integer): TMenuItem;
@@ -886,6 +941,7 @@ Begin
    Inherited;
 
    FBatterySmartPlug := Nil;
+   FUseDatabase := True;
 End;
 
 Procedure TFormMDIMain.OnRecentItemsChange(aSender: TObject);
@@ -1112,10 +1168,13 @@ End;
 Procedure TFormMDIMain.PMItemExitClick(Sender: TObject);
 Begin
    Try
-      SaveConfig;
+     Try
+        SaveConfig;
+     Except
+        // Do nothing { Ajmal }
+     End;
+   Finally
       Application.Terminate;
-   Except
-      // Do nothing { Ajmal }
    End;
 End;
 
@@ -1257,38 +1316,30 @@ End;
 
 Procedure TFormMDIMain.SaveConfig;
 Var
-   varIniFile: TIniFile;
+   varSTDBNode: IESTDBNode;
 Begin
    If MItemAutobackup.Checked Then
       MItemBackup.Click;
 
-   varIniFile := TIniFile.Create(ParentFolder + cConfig_INI);
-   Try
-      varIniFile.WriteBool(cConfigBasic, cConfigAutoBackUpOnExit, MItemAutobackup.Checked);
-      varIniFile.WriteBool(cConfigBasic, cConfigStartMinimized, MItemStartMinimized.Checked);
-      varIniFile.WriteBool(cConfigBasic, cConfigImediateUpdate, MItemImmediateUpdate.Checked);
-      varIniFile.WriteBool(cConfigBasic, cConfigRunAsAdmin, IsRunAsAdmin);
-      varIniFile.WriteString(cConfigBasic, cConfigHotKey, ShortCutToText(hKeyGeneral.HotKey));
-      varIniFile.WriteInteger(cConfigBasic, cConfigRecentCount, sEdtRecentItemCount.Value);
-      varIniFile.WriteInteger(cConfigBasic, cConfigGroupItems, cbGroupItems.ItemIndex);
-      If Connections.FileName = (cV6_FOLDER + cConnection_INI) Then
-         varIniFile.WriteString(cConfigBasic, cConfigFileName, '')
-      Else
-         varIniFile.WriteString(cConfigBasic, cConfigFileName, Connections.FileName);
+   varSTDBNode := STDatabase[cSTDBNodeConfig].ChildNode[cConfigBasic];
+   varSTDBNode[cConfigAutoBackUpOnExit].Value := MItemAutobackup.Checked;
+   varSTDBNode[cConfigStartMinimized].Value := MItemStartMinimized.Checked;
+   varSTDBNode[cConfigImediateUpdate].Value := MItemImmediateUpdate.Checked;
+   varSTDBNode[cConfigRunAsAdmin].Value := IsRunAsAdmin;
+   varSTDBNode[cConfigHotKey].Value := ShortCutToText(hKeyGeneral.HotKey);
+   varSTDBNode[cConfigRecentCount].Value := sEdtRecentItemCount.Value;
+   varSTDBNode[cConfigGroupItems].Value := cbGroupItems.ItemIndex;
+   varSTDBNode[cConfigFileName].Value := Connections.FileName;
+   If Connections.FileName = (cV6_FOLDER + cConnection_INI) Then
+      varSTDBNode[cConfigFileName].Clear;
 
-      // Currently all these value can be changed from Ini file only
-      // So only write these values if secton never exist { Ajmal }
-      If Not varIniFile.SectionExists(cConfigSPBattery) Then
-      Begin
-        varIniFile.WriteInteger(cConfigSPBattery, cConfigSPBMinThreshold, BatterySmartPlug.TurnOnLevel);
-        varIniFile.WriteInteger(cConfigSPBattery, cConfigSPBMaxThreshold, BatterySmartPlug.TurnOffLevel);
-        varIniFile.WriteString(cConfigSPBattery, cConfigSPBONUID, BatterySmartPlug.TurnOnUniqueID);
-        varIniFile.WriteString(cConfigSPBattery, cConfigSPBOFFUID, BatterySmartPlug.TurnOffUniqueID);
-      End;
-      varIniFile.WriteBool(cConfigSPBattery, cConfigSPBEnabled, BatterySmartPlug.Enabled);
-   Finally
-      varIniFile.Free;
-   End;
+   varSTDBNode := STDatabase[cSTDBNodeConfig].ChildNode[cConfigSPBattery];
+   varSTDBNode[cConfigSPBEnabled].Value := BatterySmartPlug.Enabled;
+   // varSTDBNode[cConfigSPBMinThreshold].Value := BatterySmartPlug.TurnOnLevel;
+   // varSTDBNode[cConfigSPBMaxThreshold].Value := BatterySmartPlug.TurnOffLevel;
+   // varSTDBNode[cConfigSPBONUID].Value := BatterySmartPlug.TurnOnUniqueID;
+   // varSTDBNode[cConfigSPBOFFUID].Value := BatterySmartPlug.TurnOffUniqueID;
+   STDatabase.ApplyUpdates;
 End;
 
 Procedure TFormMDIMain.sBtnBrowseConnectionClick(Sender: TObject);
@@ -1877,6 +1928,7 @@ Begin
          End
          Else
          Begin
+            FRequestWaitInterval := 10;
             Owner.ShowTrayNotification('Request to turn ' + IfThen(aValue, 'ON', 'Off') + ' smart plug failed', bfError);
          End;
       Except
