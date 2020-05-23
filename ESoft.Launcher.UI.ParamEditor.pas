@@ -14,6 +14,7 @@ Uses
    Vcl.Dialogs,
    Vcl.StdCtrls,
    Vcl.ExtCtrls,
+   ESoft.Launcher.DM.Main,
    ESoft.Launcher.Parameter;
 
 Type
@@ -109,7 +110,8 @@ Begin
             TEAdditionalParameter(FParameter).DefaultInclude := chkDefaultInclude.Checked;
          End;
    End;
-   Parameter.SaveData(FormMDIMain.ParentFolder + cParam_INI);
+   Parameter.SaveData;
+   STDatabase.SaveToDB;
    ModalResult := mrOk;
 End;
 

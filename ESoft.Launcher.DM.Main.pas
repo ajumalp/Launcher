@@ -1,5 +1,6 @@
 Unit ESoft.Launcher.DM.Main;
 
+{ ----------------- Single Table Database ------------------ }
 { ---------------------------------------------------------- }
 { Developed by Muhammad Ajmal p }
 { ajumalp@gmail.com }
@@ -20,8 +21,9 @@ Uses
    Datasnap.DBClient,
    Generics.Collections,
    Variants,
-   VarUtils,   
-   Data.Win.ADODB;
+   VarUtils,
+   Data.Win.ADODB,
+   Data.DBXInterBase;
 
    Const
       cDB_FIELD_OID = 'OID';
@@ -52,12 +54,18 @@ Type
       Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
       Function GetState: eSTDBItemState;
       Function GetIsLastChild: Boolean;
+      Function GetHasChildren: Boolean;
 
       Function IsRootNode: Boolean;
       Function HasData: Boolean;
+      Function MoveToFirstChild: IESTDBNode;
       Function FirstChild: IESTDBNode;
       Function NextChild: IESTDBNode;
+      Function ChildExists(Const aNodeName: String): Boolean;
+      Procedure DeleteChild(Const aNodeName: String);
       Procedure Clear;
+      Procedure Activate;
+      Procedure Delete(Const aDeleteType: eSTDBItemStatus = sdsDeleted; Const aDeleteFromDB: Boolean = False);
 
       Property OID: Int64 Read GetOID;
       Property ParentID: Int64 Read GetParentID;
@@ -66,6 +74,7 @@ Type
 
       Property State: eSTDBItemState Read GetState;
       Property IsLastChild: Boolean Read GetIsLastChild;
+      Property HasChildren: Boolean Read GetHasChildren;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
       Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
 
@@ -75,9 +84,8 @@ Type
       Property AsBoolean: Boolean Read GetAsBoolean;
    End;
 
-   TESTDBChildNodes = Class(TDictionary<String, IESTDBNode>)
-   End;
-
+   TESTDBChildNodes = Class(TDictionary<String, IESTDBNode>);
+   
    TESTDBNode = Class(TInterfacedObject, IESTDBNode)
    Strict Private
       FChildNodes: TESTDBChildNodes;
@@ -90,6 +98,8 @@ Type
       FStatus: eSTDBItemStatus;
       FIsLastChild: Boolean;
       FCurrentChildBookmark: TBookmark;
+      FMoveToFirstChild: Boolean;
+      FParentNode: IESTDBNode;
    
       Function GetAsString: String;
       Function GetAsInteger: Integer;
@@ -99,6 +109,7 @@ Type
       Function GetChildNode(aNodeName: String): IESTDBNode;
       Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode; 
       Function GetIsLastChild: Boolean;
+      Function GetHasChildren: Boolean;
       Function GetState: eSTDBItemState; 
       Function Locate(Const aKeys: Array Of String; Const aValues: Array Of Variant): Boolean; Overload;
       Function Locate: Boolean; Overload;
@@ -116,9 +127,14 @@ Type
 
       Function IsRootNode: Boolean;
       Function HasData: Boolean;
+      Function MoveToFirstChild: IESTDBNode;
       Function FirstChild: IESTDBNode;
-      Function NextChild: IESTDBNode;      
+      Function NextChild: IESTDBNode;
+      Function ChildExists(Const aNodeName: String): Boolean;
+      Procedure DeleteChild(Const aNodeName: String);
       Procedure Clear;
+      Procedure Activate;
+      Procedure Delete(Const aDeleteType: eSTDBItemStatus = sdsDeleted; Const aDeleteFromDB: Boolean = False);
 
       Property OID: Int64 Read GetOID;
       Property ParentID: Int64 Read GetParentID;
@@ -128,6 +144,7 @@ Type
 
       Property State: eSTDBItemState Read GetState;
       Property IsLastChild: Boolean Read GetIsLastChild;
+      Property HasChildren: Boolean Read GetHasChildren;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
       Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
       
@@ -147,7 +164,26 @@ Type
       Constructor Create(Const aDataset: TClientDataSet); Reintroduce;
    End;
 
-   TESTDatabase = Class
+   IESTDatabase = Interface
+      Function GetRootNode: IESTDBNode;
+      Function GetChildNode(aNodeName: String): IESTDBNode;
+      Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
+      Function GetConnection: TADOConnection;
+
+      Function SaveToDB: Integer;
+      Function NextOID: Int64;
+      Function FetchQuery(Const aQuery: String): Variant;
+      Function ExecuteQuery(Const aQuery: String): Integer;
+      Function NodeExists(Const aParentID: Int64; Const aNodeName: String): Boolean;
+      Procedure PurgeDatabase;
+
+      Property Connection: TADOConnection Read GetConnection;
+      Property RootNode: IESTDBNode Read GetRootNode;
+      Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
+      Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
+   end;
+
+   TESTDatabase = Class(TInterfacedObject, IESTDatabase)
    Strict Private
       FDataModule: TdmMain;    
       FRootNode: IESTDBNode;     
@@ -159,19 +195,25 @@ Type
       Function GetChildNode(aNodeName: String): IESTDBNode;
       Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
       Procedure ExtractDatabaseFile;
-      
+      Function GetConnection: TADOConnection;
+      Procedure ReloadData;
+      Procedure ResetObjectIDPK;
+
       Property DataModule: TdmMain Read GetDataModule;
       Property GeneralDSet: TClientDataSet Read GetGeneralDSet;
-   Public      
+   Strict Private
+      Function NextOID: Int64;
+   Public
       Constructor Create;
       Destructor Destroy; override;
 
-      Procedure ReloadData;
-      Function ApplyUpdates: Integer;
-      Function NextOID: Int64;
-      Procedure ResetObjectIDPK;
-      Function ExecuteQuery(Const aQuery: String): Variant;
+      Function SaveToDB: Integer;
+      Function FetchQuery(Const aQuery: String): Variant;
+      Function ExecuteQuery(Const aQuery: String): Integer;
+      Function NodeExists(Const aParentID: Int64; Const aNodeName: String): Boolean;
+      Procedure PurgeDatabase;
 
+      Property Connection: TADOConnection Read GetConnection;
       Property RootNode: IESTDBNode Read GetRootNode;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
       Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
@@ -182,15 +224,17 @@ Type
       dsProSTDBMain: TDataSetProvider;
       SQLCnnMain: TADOConnection;
       qrySTDBMain: TADOQuery;
-      qryGeneral: TADOQuery;
 
       Procedure DataModuleCreate(Sender: TObject);
+    procedure clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet;
+      E: EReconcileError; UpdateKind: TUpdateKind;
+      var Action: TReconcileAction);
    Public
       Function BuildConnectionString(Const aDatabase: String): String;
       Property GeneralDSet: TClientDataSet Read clntDSetSTDBMain;
    End;
 
-   Function STDatabase: TESTDatabase;
+   Function STDatabase: IESTDatabase;
 
 Implementation
 
@@ -199,12 +243,12 @@ Implementation
 {$R *.dfm}
 
 Var
-   _STDatabase: TESTDatabase = Nil;
-Function STDatabase: TESTDatabase;
+   _STDatabase: IESTDatabase = Nil;
+Function STDatabase: IESTDatabase;
 Begin
-   If Not Assigned(_STDatabase) Then
-      _STDatabase := TESTDatabase.Create;
-   Result := _STDatabase;
+  If Not Assigned(_STDatabase) Then
+    _STDatabase := TESTDatabase.Create;
+  Result := _STDatabase;
 End;
 
 Function TdmMain.BuildConnectionString(Const aDatabase: String): String;
@@ -219,6 +263,12 @@ Begin
    End;
    Result := 'DRIVER=SQLite3 ODBC Driver;Database=' + aDatabase + ';LongNames=0;Timeout=1000;NoTXN=0;SyncPragma=NORMAL;StepAPI=0;';
 End;
+
+procedure TdmMain.clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet;
+  E: EReconcileError; UpdateKind: TUpdateKind; var Action: TReconcileAction);
+begin
+  MessageDlg(E.Message, mtError, [mbOK], 0);
+end;
 
 Procedure TdmMain.DataModuleCreate(Sender: TObject);
 Begin
@@ -235,14 +285,22 @@ End;
 
 { TESTDatabase }
 
-Function TESTDatabase.ApplyUpdates: Integer;
+Function TESTDatabase.SaveToDB: Integer;
 begin
-   Result := GeneralDSet.ApplyUpdates(0);
-
-   ReloadData;
-   If FNextOID <> -1 Then
-      ResetObjectIDPK;
+  Result := GeneralDSet.ApplyUpdates(0);
+  ResetObjectIDPK;
+  ReloadData;
 end;
+
+Function TESTDatabase.GetConnection: TADOConnection;
+Begin
+   Result := DataModule.SQLCnnMain;
+End;
+
+Procedure TESTDatabase.PurgeDatabase;
+Begin
+  ExecuteQuery('DELETE FROM STDBMAIN WHERE STATUS = "D"');
+End;
 
 Constructor TESTDatabase.Create;
 Begin
@@ -253,20 +311,43 @@ End;
 
 destructor TESTDatabase.Destroy;
 begin
-   If Assigned(FDataModule) Then
-      FreeAndNil(FDataModule);
+  If Assigned(FDataModule) Then
+    FreeAndNil(FDataModule);
 
-   Inherited;
+  Inherited;
 end;
 
-Function TESTDatabase.ExecuteQuery(const aQuery: String): Variant;
+Function TESTDatabase.FetchQuery(const aQuery: String): Variant;
+Var
+   varSQLQuery: TADOQuery;
 Begin
    Result := Null;
-   DataModule.qryGeneral.Close;
-   DataModule.qryGeneral.SQL.Text := aQuery;
-   DataModule.qryGeneral.Open;
-   If Not DataModule.qryGeneral.IsEmpty Then
-      Result := DataModule.qryGeneral.Fields[0].AsVariant;
+
+   varSQLQuery := TADOQuery.Create(Nil);
+   Try
+     varSQLQuery.Connection := DataModule.SQLCnnMain;
+      varSQLQuery.SQL.Text := aQuery;
+      varSQLQuery.Open;
+      If Not varSQLQuery.IsEmpty Then
+         Result := varSQLQuery.Fields[0].AsVariant;
+   Finally
+      varSQLQuery.Free;
+   End;
+
+End;
+
+Function TESTDatabase.ExecuteQuery(const aQuery: String): Integer;
+Var
+   varSQLQuery: TADOQuery;
+Begin
+   varSQLQuery := TADOQuery.Create(Nil);
+   Try
+      varSQLQuery.Connection := DataModule.SQLCnnMain;
+      varSQLQuery.SQL.Text := aQuery;
+      Result := varSQLQuery.ExecSQL;
+   Finally
+      varSQLQuery.Free;
+   End;
 End;
 
 Procedure TESTDatabase.ExtractDatabaseFile;
@@ -315,12 +396,20 @@ Function TESTDatabase.NextOID: Int64;
 Begin
    If FNextOID = -1 Then
    Begin
-      FNextOID := ExecuteQuery('SELECT MAX(OID) + 1 AS NEXTOID FROM STDBMAIN');
+      FNextOID := FetchQuery('SELECT MAX(OID) + 1 AS NEXTOID FROM STDBMAIN');
       Exit(FNextOID);
    End;
 
    Inc(FNextOID);
    Result := FNextOID;
+End;
+
+Function TESTDatabase.NodeExists(Const aParentID: Int64; Const aNodeName: String): Boolean;
+Var
+   sKeys: String;
+Begin
+   sKeys := Format('%s;%s', [cDB_FIELD_PARENTID, cDB_FIELD_NAME]);
+   Result := GeneralDSet.Locate(sKeys, VarArrayOf([aParentID, aNodeName]), [loCaseInsensitive]);
 End;
 
 Function TESTDatabase.GetGeneralDSet: TClientDataSet;
@@ -330,21 +419,40 @@ End;
 
 Procedure TESTDatabase.ReloadData;
 Begin
-   If GeneralDSet.Active Then 
-      GeneralDSet.Close;
-   GeneralDSet.Open;
-   // Set nill to free and existing objects { Ajmal }
-   FRootNode := Nil;
+  Assert((FNextOID = -1) And (Not GeneralDSet.UpdatesPending), 'Should not reload dataset when updates pending');
+
+  If GeneralDSet.Active Then
+    GeneralDSet.Close;
+  GeneralDSet.Open;
+
+  // Set nill to free and existing objects { Ajmal }
+  FRootNode := Nil;
 End;
 
 Procedure TESTDatabase.ResetObjectIDPK;
 Const 
    cSQL_RESET_OID = 'UPDATE sqlite_sequence SET SEQ = (SELECT MAX(OID) FROM STDBMAIN) WHERE NAME = "STDBMAIN"';
 Begin
-   DataModule.SQLCnnMain.Execute(cSQL_RESET_OID);
+  If FNextOID = -1 Then
+    Exit;
+
+  DataModule.SQLCnnMain.Execute(cSQL_RESET_OID);
+  FNextOID := -1;
 End;
 
 { TESTDBNode }
+
+Procedure TESTDBNode.Activate;
+Begin
+  LoadData;  
+  FStatus := sdsActive;
+  Post;
+End;
+
+Function TESTDBNode.ChildExists(const aNodeName: String): Boolean;
+Begin
+   Result := Locate([cDB_FIELD_PARENTID, cDB_FIELD_NAME], [OID, aNodeName]);
+End;
 
 Procedure TESTDBNode.Clear;
 Begin
@@ -360,8 +468,67 @@ Begin
    FName := aNodeName;
    FDataset := aDataset;
    FIsLastChild := False;
+   FMoveToFirstChild := False;
 
    FChildNodes := TESTDBChildNodes.Create;
+End;
+
+Procedure TESTDBNode.Delete(Const aDeleteType: eSTDBItemStatus = sdsDeleted; Const aDeleteFromDB: Boolean = False);
+
+  Function _DeleteQuery(Const aDeleteFrom: String = 'PARENTID'): String;
+  Begin
+    If aDeleteFromDB Then 
+      Exit('DELETE FROM STDBMAIN WHERE ' + aDeleteFrom + ' = ');
+      
+    Case aDeleteType Of
+      sdsDeleted: Result := 'UPDATE STDBMAIN SET STATUS = "D" WHERE ' + aDeleteFrom + ' = ';
+      sdsInActive: Result := 'UPDATE STDBMAIN SET STATUS = "I" WHERE ' + aDeleteFrom + ' = ';
+    End;
+  End;
+
+  Procedure _DeleteChildNodes(Const aOID: Int64);
+  Var
+    lOID: Int64;
+    varOIDList: TList<Int64>;
+    varSQLQuery: TADOQuery;
+  Begin
+    varOIDList := TList<Int64>.Create;
+    varSQLQuery := TADOQuery.Create(Nil);
+    Try
+      With varSQLQuery Do
+      Begin
+        varSQLQuery.Connection := STDatabase.Connection;
+        SQL.Text := 'SELECT OID FROM STDBMAIN WHERE PARENTID = ' + aOID.ToString;
+        Open;
+        While Not Eof Do
+        Begin
+          varOIDList.Add(FieldByName('OID').AsLargeInt);
+          Next;
+        End;
+        Close;
+      End;
+
+      For lOID in varOIDList Do
+        _DeleteChildNodes(lOID);
+    Finally
+       varSQLQuery.Free;
+       varOIDList.Free;
+    End;
+
+    STDatabase.ExecuteQuery(_DeleteQuery + aOID.ToString);
+  End;
+
+Begin
+  Assert(Not FDataset.UpdatesPending, 'Should not delete when updates are pending');
+
+  _DeleteChildNodes(OID);
+  STDatabase.ExecuteQuery(_DeleteQuery('OID') + OID.ToString);
+End;
+
+Procedure TESTDBNode.DeleteChild(const aNodeName: String);
+Begin
+  If ChildExists(aNodeName) Then
+    ChildNode[aNodeName].Delete;
 End;
 
 Destructor TESTDBNode.Destroy;
@@ -384,6 +551,7 @@ Begin
       ValidateLastChild;
       sChildNodeName := FDataset.FieldByName(cDB_FIELD_NAME).AsString;
       Result := ChildNode[sChildNodeName];
+      FMoveToFirstChild := False;
    End;
 End;
 
@@ -427,9 +595,14 @@ Begin
    End;
 End;
 
+Function TESTDBNode.GetHasChildren: Boolean;
+Begin
+   Result := Locate([cDB_FIELD_PARENTID], [OID]);
+End;
+
 Function TESTDBNode.GetIsLastChild: Boolean;
 Begin
-   Result := FIsLastChild;    
+   Result := FIsLastChild Or Not HasChildren;
 End;
 
 Function TESTDBNode.GetName: String;
@@ -530,6 +703,15 @@ Begin
    Result := Locate([cDB_FIELD_PARENTID, cDB_FIELD_NAME], [vParentID, FName]);
 End;
 
+Function TESTDBNode.MoveToFirstChild: IESTDBNode;
+Begin
+   // We should call FirstChild to validate IsLastChild
+   Result := FirstChild;
+   // Set FMoveToFirstChild after calling FirstChild
+   // Because FirstChild will reset FMoveToFirstChild
+   FMoveToFirstChild := True;
+End;
+
 Function TESTDBNode.Locate(const aKeys: Array Of String; const aValues: array of Variant): Boolean;
 Var
    iCntr: Integer;
@@ -549,12 +731,16 @@ Function TESTDBNode.NextChild: IESTDBNode;
 Var
    sChildNodeName: String;
 Begin
+   If FMoveToFirstChild Then
+      Exit(FirstChild);
+      
    If IsLastChild Then 
-      Raise Exception.Create('List Index Out Of Bounds');
+      Exit(Nil);
 
-   FDataset.BookmarkValid(FCurrentChildBookmark);
+   Assert(FDataset.BookmarkValid(FCurrentChildBookmark), 'Invalid bookmark');
+   FDataset.Bookmark := FCurrentChildBookmark;
    FDataset.Next;
-   FCurrentChildBookmark := FDataset.Bookmark;
+   FCurrentChildBookmark := FDataset.GetBookmark;
    ValidateLastChild;   
    sChildNodeName := FDataset.FieldByName(cDB_FIELD_NAME).AsString;
    Result := ChildNode[sChildNodeName];
@@ -566,6 +752,8 @@ Begin
   Else FDataset.Append;
 
   FDataset.FieldByName(cDB_FIELD_VALUE).Value := FValue;
+   // When a value is set, the re activate the node { Ajmal }
+  FDataset.FieldByName(cDB_FIELD_STATUS).Value := 'A';
   FDataset.Post;
 End;
 
@@ -607,11 +795,5 @@ Function TESTDBRootNode.GetValue: Variant;
 Begin
    Result := Null;
 End;
-
-Initialization 
-
-Finalization
-  If Assigned(_STDatabase) Then
-     FreeAndNil(_STDatabase);
 
 End.

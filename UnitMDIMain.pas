@@ -84,8 +84,8 @@ Const
 
    // In the order MMmmRRBB
    // M - Major, m - Minor, R - Release and B - Build { Ajmal }
-   cApplication_Version = 01000138;
-   cAppVersion = '1.0.1.38';
+   cApplication_Version = 01000139;
+   cAppVersion = '1.0.1.39';
 
 Type
    // Forward declarations 
@@ -199,6 +199,7 @@ Type
       PMItemFavorite: TMenuItem;
       TimerBatterySmartPlug: TTimer;
       MItemBattSP: TMenuItem;
+      MItemPurgeDB: TMenuItem;
       Procedure sBtnBrowseConnectionClick(Sender: TObject);
       Procedure edtConnectionRightButtonClick(Sender: TObject);
       Procedure FormCreate(Sender: TObject);
@@ -236,6 +237,7 @@ Type
       Procedure PMItemFavoriteClick(Sender: TObject);
       Procedure TimerBatterySmartPlugTimer(aSender: TObject);
       Procedure MItemBattSPClick(Sender: TObject);
+      Procedure MItemPurgeDBClick(Sender: TObject);
       // Private declarations. Variables/Methods can be access inside this class and other class in the same unit. { Ajmal }
    Strict Private
       // Strict Private declarations. Variables/Methods can be access inside this class only. { Ajmal }
@@ -575,12 +577,17 @@ Begin
 
    If Assigned(FParameters) Then
    Begin
-      Parameters.SaveData(ParentFolder + cParam_INI);
+      Parameters.SaveData;
       FreeAndNil(FParameters);
    End;
+
    If Assigned(FAppGroups) Then
    Begin
-      AppGroups.SaveData(ParentFolder + cGroup_INI);
+      Try
+         AppGroups.SaveData(ParentFolder + cGroup_INI);
+      Except
+         // Do nothing here { Ajmal }
+      End;
       FreeAndNil(FAppGroups);
    End;
 End;
@@ -728,47 +735,34 @@ End;
 Procedure TFormMDIMain.LoadConfig;
 Var
    varIniFile: TIniFile;
-   varConfigNode: IESTDBNode;
-
-   Procedure _CopyToDB(Const aParentNode, aNodeName: String; Const aDefaultValue: Variant);
-   Var
-      varNode: IESTDBNode;
-   Begin
-      varNode := varConfigNode[aParentNode].ChildNode[aNodeName];
-      Case VarType(aDefaultValue) Of
-         varBoolean: varNode.Value := varIniFile.ReadBool(aParentNode, aNodeName, aDefaultValue);
-         varByte, varInteger: varNode.Value := varIniFile.ReadInteger(aParentNode, aNodeName, aDefaultValue);
-         Else varNode.Value := varIniFile.ReadString(aParentNode, aNodeName, aDefaultValue);
-      End;
-   End;
-
+   bIsCopiedToDB: Boolean;
 Begin
+   bIsCopiedToDB := STDatabase[cSTDBNodeConfig, False].AsBoolean;
+   LoadConfigFromDB;
+
+   If bIsCopiedToDB Then 
+      Exit;
+      
    varIniFile := TIniFile.Create(ParentFolder + cConfig_INI);
    Try
       FUseDatabase := varIniFile.ReadBool(cConfigBasic, cConfigUseDB, True);
-      If varIniFile.SectionExists(cConfigBasic) And (Not STDatabase[cSTDBNodeConfig, False].AsBoolean) Then
-      Begin
-         varConfigNode := STDatabase[cSTDBNodeConfig];
+      MItemAutobackup.Checked := varIniFile.ReadBool(cConfigBasic, cConfigAutoBackUpOnExit, False);
+      MItemStartMinimized.Checked := varIniFile.ReadBool(cConfigBasic, cConfigStartMinimized, True);
+      MItemImmediateUpdate.Checked := varIniFile.ReadBool(cConfigBasic, cConfigImediateUpdate, True);
+      IsRunAsAdmin := varIniFile.ReadBool(cConfigBasic, cConfigRunAsAdmin, False);
+      Connections.FileName := varIniFile.ReadString(cConfigBasic, cConfigFileName, '');
+      hKeyGeneral.HotKey := TextToShortCut(varIniFile.ReadString(cConfigBasic, cConfigHotKey, cConfigDefaultHotKeyText));
+      sEdtRecentItemCount.Value := varIniFile.ReadInteger(cConfigBasic, cConfigRecentCount, 5);
+      cbGroupItems.ItemIndex := varIniFile.ReadInteger(cConfigBasic, cConfigGroupItems, cGroupVisible_None);
 
-         _CopyToDB(cConfigBasic, cConfigAutoBackUpOnExit, False);
-         _CopyToDB(cConfigBasic, cConfigStartMinimized, True);
-         _CopyToDB(cConfigBasic, cConfigImediateUpdate, True);
-         _CopyToDB(cConfigBasic, cConfigRunAsAdmin, False);
-         _CopyToDB(cConfigBasic, cConfigFileName, '');
-         _CopyToDB(cConfigBasic, cConfigHotKey, cConfigDefaultHotKeyText);
-         _CopyToDB(cConfigBasic, cConfigRecentCount, 5);
-         _CopyToDB(cConfigBasic, cConfigGroupItems, cGroupVisible_None);
+      BatterySmartPlug.Enabled := varIniFile.ReadBool(cConfigSPBattery, cConfigSPBEnabled, False);
+      BatterySmartPlug.TurnOnLevel := varIniFile.ReadInteger(cConfigSPBattery, cConfigSPBMinThreshold, 20);
+      BatterySmartPlug.TurnOffLevel := varIniFile.ReadInteger(cConfigSPBattery, cConfigSPBMaxThreshold, 100);
+      BatterySmartPlug.TurnOnUniqueID := varIniFile.ReadString(cConfigSPBattery, cConfigSPBONUID, '');
+      BatterySmartPlug.TurnOffUniqueID := varIniFile.ReadString(cConfigSPBattery, cConfigSPBOFFUID, '');
 
-         _CopyToDB(cConfigSPBattery, cConfigSPBEnabled, False);
-         _CopyToDB(cConfigSPBattery, cConfigSPBMinThreshold, 20);
-         _CopyToDB(cConfigSPBattery, cConfigSPBMaxThreshold, 100);
-         _CopyToDB(cConfigSPBattery, cConfigSPBONUID, '');
-         _CopyToDB(cConfigSPBattery, cConfigSPBOFFUID, '');
-
-         varConfigNode.Value := True;
-         STDatabase.ApplyUpdates;
-      End;
-      LoadConfigFromDB;
+      // Save data to database { Ajmal }
+      SaveConfig;
    Finally
       varIniFile.Free;
    End;
@@ -905,6 +899,14 @@ Procedure TFormMDIMain.MItemBattSPClick(Sender: TObject);
 Begin
    BatterySPTimer.Enabled := Not BatterySPTimer.Enabled;
    MItemBattSP.Checked := BatterySPTimer.Enabled;    
+End;
+
+Procedure TFormMDIMain.MItemPurgeDBClick(Sender: TObject);
+Begin
+  If MessageDlg('Are you sure you want delete purge data? ', mtWarning, mbYesNo, mrYes) = mrNo Then
+    Exit;
+
+  STDatabase.PurgeDatabase;
 End;
 
 Procedure TFormMDIMain.MItemShowHideSettingsClick(Sender: TObject);
@@ -1339,7 +1341,9 @@ Begin
    // varSTDBNode[cConfigSPBMaxThreshold].Value := BatterySmartPlug.TurnOffLevel;
    // varSTDBNode[cConfigSPBONUID].Value := BatterySmartPlug.TurnOnUniqueID;
    // varSTDBNode[cConfigSPBOFFUID].Value := BatterySmartPlug.TurnOffUniqueID;
-   STDatabase.ApplyUpdates;
+
+   STDatabase[cSTDBNodeConfig].Value := True;
+   STDatabase.SaveToDB;
 End;
 
 Procedure TFormMDIMain.sBtnBrowseConnectionClick(Sender: TObject);

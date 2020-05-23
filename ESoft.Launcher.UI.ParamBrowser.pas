@@ -439,10 +439,7 @@ Begin
    Begin
       varParam := SelectedParameter;
       If Assigned(varParam) And varParam.InheritsFrom(TEParameterBase) Then
-      Begin
-         FormMDIMain.Parameters.Remove(varParam.Name);
-         FormMDIMain.Parameters.SaveData(FormMDIMain.ParentFolder + cParam_INI);
-      End;
+         FormMDIMain.Parameters.DeleteItemByName(varParam.Name);
       LoadParametrs;
    End;
 End;

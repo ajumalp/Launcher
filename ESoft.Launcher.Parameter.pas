@@ -9,9 +9,11 @@ Interface
 
 Uses
   System.Classes,
+  Vcl.Dialogs,
   IniFiles,
   Generics.Collections,
-  System.SysUtils;
+  System.SysUtils,
+  ESoft.Launcher.DM.Main;
 
 Const
   cParamTypeInvalid = -1;
@@ -44,7 +46,6 @@ Type
 
 Type
   TEParameterBase = Class(TPersistent)
-  Private
     // Private declarations. Variables/Methods can be access inside this class and other class in the same unit. { Ajmal }
   Strict Private
     // Strict Private declarations. Variables/Methods can be access inside this class only. { Ajmal }
@@ -52,30 +53,40 @@ Type
     FParameter: String;
     FName: String;
     FCategory: String;
+    FSTDBNode: IESTDBNode;
+
+    Function GetSTDBNode: IESTDBNode;
   Public
     Constructor Create; Virtual;
 
-    Procedure LoadData(Const aFilename: String); Virtual;
-    Procedure SaveData(Const aFilename: String); Virtual;
+    Procedure LoadData; Overload; Virtual;
+    Procedure LoadData(Const aFilename: String); Overload; Virtual; Deprecated;
+    Procedure SaveData; Virtual;
   Published
     Property Name: String Read FName Write FName;
     Property Parameter: String Read FParameter Write FParameter;
     Property ParamType: Integer Read FParamType Write FParamType;
     Property ParamCategory: String Read FCategory Write FCategory;
+    Property STDBNode: IESTDBNode Read GetSTDBNode;
   End;
 
   TEParameters = Class(TObjectDictionary<String, TEParameterBase>)
   Strict Private
     FIsLoaded: Boolean;
+    FSTDBParams: IESTDBNode;
 
+    Function GetSTDBParams: IESTDBNode;
   Public
     Constructor Create;
 
+    Procedure DeleteItemByName(Const aParmName: String);
     Procedure LoadData(Const aFileName: String);
-    Procedure SaveData(Const aFileName: String);
+    Procedure SaveData;
     Function AddItem(
       Const aName: String;
       Const aType: SmallInt = cParamTypeConnection): TEParameterBase;
+
+    Property STDBParams: IESTDBNode Read GetSTDBParams;
   End;
 
   TEAdditionalParameter = Class(TEParameterBase)
@@ -87,8 +98,9 @@ Type
   Public
     Constructor Create; Override;
 
-    Procedure LoadData(Const aFilename: String); Override;
-    Procedure SaveData(Const aFilename: String); Override;
+    Procedure LoadData; Override;
+    Procedure LoadData(Const aFilename: String); Override; Deprecated;
+    Procedure SaveData; Override;
   Published
     Property DefaultInclude: Boolean Read FDefaultInclude Write FDefaultInclude;
   End;
@@ -103,8 +115,9 @@ Type
   Public
     Constructor Create; Override;
 
-    Procedure LoadData(Const aFilename: String); Override;
-    Procedure SaveData(Const aFilename: String); Override;
+    Procedure LoadData; Override;
+    Procedure LoadData(Const aFilename: String); Override; Deprecated;
+    Procedure SaveData; Override;
   Published
     Property Connection: String Read FConnection Write FConnection;
     Property ExcludeAdditionalParams: Boolean Read FExcludeAdditionalParams Write FExcludeAdditionalParams;
@@ -130,6 +143,21 @@ Constructor TEParameterBase.Create;
 Begin
   // Virtual method, do nothing here. { Ajmal }
   FParameter := '';
+  FSTDBNode := Nil;
+End;
+
+Function TEParameterBase.GetSTDBNode: IESTDBNode;
+Begin
+   If Not Assigned(FSTDBNode) Then
+      FSTDBNode := STDatabase[cSTDBNodeParams, False].ChildNode[Name];
+   Result := FSTDBNode;
+End;
+
+Procedure TEParameterBase.LoadData;
+Begin
+  Parameter := STDBNode[cParamTextStrm, EmptyStr].AsString;
+  ParamType := STDBNode[cParamType, cParamTypeInvalid].AsInteger;
+  ParamCategory := STDBNode[cParamCategory, EmptyStr].AsString;
 End;
 
 Procedure TEParameterBase.LoadData(Const aFilename: String);
@@ -153,29 +181,21 @@ Begin
   End;
 End;
 
-Procedure TEParameterBase.SaveData(Const aFilename: String);
+Procedure TEParameterBase.SaveData;
 Var
-  varIniFile: TIniFile;
   iParamType: Integer;
-  varStrm: TStringStream;
 Begin
-  varIniFile := TIniFile.Create(aFilename);
-  varStrm := TStringStream.Create(Parameter);
-  Try
-    If Self Is TEConnectionParameter Then
-      iParamType := cParamTypeConnection
-    Else If Self Is TEAdditionalParameter Then
-      iParamType := cParamTypeAdditional
-    Else
-      iParamType := cParamTypeInvalid;
+  If Self Is TEConnectionParameter Then
+    iParamType := cParamTypeConnection
+  Else If Self Is TEAdditionalParameter Then
+    iParamType := cParamTypeAdditional
+  Else
+    iParamType := cParamTypeInvalid;
 
-    varIniFile.WriteBinaryStream(Name, cParamTextStrm, varStrm);
-    varIniFile.WriteInteger(Name, cParamType, iParamType);
-    varIniFile.WriteString(Name, cParamCategory, ParamCategory);
-  Finally
-    varStrm.Free;
-    varIniFile.Free;
-  End;
+  STDBNode.Activate;
+  STDBNode[cParamTextStrm].Value := Parameter;
+  STDBNode[cParamType].Value := iParamType;
+  STDBNode[cParamCategory].Value := ParamCategory;
 End;
 
 {TEAdditionalParameter}
@@ -201,18 +221,18 @@ Begin
   End;
 End;
 
-Procedure TEAdditionalParameter.SaveData(Const aFilename: String);
-Var
-  varIniFile: TIniFile;
+Procedure TEAdditionalParameter.LoadData;
 Begin
   Inherited;
 
-  varIniFile := TIniFile.Create(aFilename);
-  Try
-    varIniFile.WriteBool(Name, cParamDefaultInclude, DefaultInclude);
-  Finally
-    varIniFile.Free;
-  End;
+  DefaultInclude := STDBNode[cParamDefaultInclude, False].AsBoolean;
+End;
+
+Procedure TEAdditionalParameter.SaveData;
+Begin
+  Inherited;
+
+  STDBNode[cParamDefaultInclude].Value := DefaultInclude;
 End;
 
 {TEConnections}
@@ -306,6 +326,20 @@ Begin
   Inherited Create([doOwnsValues]);
 
   FIsLoaded := False;
+  FSTDBParams := Nil;
+End;
+
+Procedure TEParameters.DeleteItemByName(const aParmName: String);
+Begin
+  STDBParams.DeleteChild(aParmName);
+  Remove(aParmName);
+End;
+
+Function TEParameters.GetSTDBParams: IESTDBNode;
+Begin
+   If Not Assigned(FSTDBParams) Then
+      FSTDBParams := STDatabase[cSTDBNodeParams, False];
+   Result := FSTDBParams;
 End;
 
 Procedure TEParameters.LoadData(Const aFileName: String);
@@ -315,7 +349,29 @@ Var
   varParameter: TEParameterBase;
   sCurrName: String;
   iCntr: Integer;
+  varSTDBNode: IESTDBNode;
 Begin
+  varSTDBNode := STDBParams.FirstChild;
+  While Assigned(varSTDBNode) Do
+  Begin
+    sCurrName := varSTDBNode.Name.Trim;
+    If sCurrName.IsEmpty Then
+      Raise Exception.Create('Parameter Name cannot be empty');
+
+    // Only load active Items { Ajmal }
+    If STDBParams[sCurrName].Status = sdsActive Then
+    Begin
+      varParameter := AddItem(sCurrName, STDBParams[sCurrName].ChildNode[cParamType, cParamTypeInvalid].Value);
+      varParameter.LoadData;
+    End;
+
+    varSTDBNode := STDBParams.NextChild;
+  End;
+
+  // If data is already saved to db, then don't load from Ini anymore { Ajmal }
+  If STDBParams.AsBoolean Then
+    Exit;
+
   varIniFile := TIniFile.Create(aFileName);
   varList := TStringList.Create;
   varList.Duplicates := dupIgnore;
@@ -335,22 +391,27 @@ Begin
       varParameter.LoadData(aFileName);
     End;
     FIsLoaded := True;
+
+    // Save data to database { Ajmal }
+    SaveData;
   Finally
     varIniFile.Free;
     varList.Free;
   End;
 End;
 
-Procedure TEParameters.SaveData(Const aFileName: String);
+Procedure TEParameters.SaveData;
 Var
   varParameter: TEParameterBase;
 Begin
   If Not FIsLoaded Then
     Exit; // Don't save if it's not loaded. { Ajmal }
 
-  DeleteFile(aFileName);
   For varParameter In Values Do
-    varParameter.SaveData(aFileName);
+    varParameter.SaveData;
+
+  STDBParams.Value := True;
+  STDatabase.SaveToDB;
 End;
 
 {TEConnectionParameter}
@@ -377,19 +438,20 @@ Begin
   End;
 End;
 
-Procedure TEConnectionParameter.SaveData(Const aFilename: String);
-Var
-  varIniFile: TIniFile;
+Procedure TEConnectionParameter.LoadData;
 Begin
   Inherited;
 
-  varIniFile := TIniFile.Create(aFilename);
-  Try
-    varIniFile.WriteString(Name, cParamConnection, Connection);
-    varIniFile.WriteBool(Name, cParamExcludeAdditional, ExcludeAdditionalParams);
-  Finally
-    varIniFile.Free;
-  End;
+  Connection := STDBNode[cParamConnection, ''].AsString;
+  ExcludeAdditionalParams := STDBNode[cParamExcludeAdditional, False].AsBoolean;
+End;
+
+Procedure TEConnectionParameter.SaveData;
+Begin
+  Inherited;
+
+  STDBNode[cParamConnection].Value := Connection;
+  STDBNode[cParamExcludeAdditional].Value := ExcludeAdditionalParams;
 End;
 
 End.

@@ -193,7 +193,11 @@ Begin
       For varClpItem In FItems Do
          varJSONArray.Add(varClpItem.ToJSONString);
       varList.Text := varJSONArray.ToString;
-      varList.SaveToFile(FormMDIMain.ParentFolder + cClipbord_Data);
+      Try
+         varList.SaveToFile(FormMDIMain.ParentFolder + cClipbord_Data);
+      Except
+         // Do nothing here { Ajmal }
+      End;
    Finally
       varJSONArray.Free;
       varList.Free;

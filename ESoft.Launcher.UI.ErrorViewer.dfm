@@ -2,7 +2,7 @@ object FormExceptionHandler: TFormExceptionHandler
   Left = 621
   Top = 193
   BorderStyle = bsDialog
-  Caption = 'DelScript [Launcher]'
+  Caption = 'Exception Handler'
   ClientHeight = 159
   ClientWidth = 421
   Color = 14871789
