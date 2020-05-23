@@ -8,6 +8,7 @@ Uses
    System.SysUtils,
    System.Variants,
    System.Classes,
+   System.UITypes,
    Vcl.Graphics,
    Vcl.Controls,
    Vcl.Forms,

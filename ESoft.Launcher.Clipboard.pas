@@ -165,10 +165,10 @@ Begin
       varJSONArray := TJSONObject.ParseJSONValue(varList.Text) as TJSONArray;
       Try
          FItems.Clear; // Clear all items { Ajmal }
-         For iCntr := 0 To Pred(varJSONArray.Size) Do
+         For iCntr := 0 To Pred(varJSONArray.Count) Do
          Begin
             varClpItem := TEClipboardItem.Create;
-            varClpItem.FromJSON(varJSONArray.Get(iCntr) as TJSONObject);
+            varClpItem.FromJSON(varJSONArray.Items[iCntr] as TJSONObject);
             // Don't use FItems.IndexOf(), we need to compare incasesensitive { Ajmal }
             If Not Contains(varClpItem.Name) Then
                FItems.Add(varClpItem);
@@ -212,9 +212,6 @@ Begin
 End;
 
 Procedure TEClipboardItem.FromJSON(Const aJSONObj: TJSONObject);
-var
-   iCntr: Integer;
-   varJSONPair: TJSONPair;
 Begin
    FName := aJSONObj.Get(cJSON_NAME).JsonValue.Value;
    try

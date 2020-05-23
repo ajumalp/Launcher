@@ -106,7 +106,6 @@ End;
 Procedure TFormBackupRestore.FormCreate(Sender: TObject);
 Var
   varSearch: TSearchRec;
-  sFileNamePrifix: String;
 Begin
   If FindFirst(FileNamePrifix + '*.zip', faArchive, varSearch) = 0 Then
   Begin

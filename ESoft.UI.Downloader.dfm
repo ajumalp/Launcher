@@ -41,11 +41,12 @@ object FormDownloader: TFormDownloader
     Font.Style = [fsBold]
     ParentFont = False
     Layout = tlCenter
+    ExplicitWidth = 3
   end
   object lblText: TLabel
     AlignWithMargins = True
     Left = 15
-    Top = 33
+    Top = 36
     Width = 376
     Height = 15
     Cursor = crHandPoint
@@ -62,6 +63,7 @@ object FormDownloader: TFormDownloader
     ShowHint = True
     Layout = tlCenter
     OnClick = lblTextClick
+    ExplicitWidth = 3
   end
   object lblPercentDone: TLabel
     Left = 15
@@ -106,7 +108,7 @@ object FormDownloader: TFormDownloader
   object Panel1: TPanel
     AlignWithMargins = True
     Left = 15
-    Top = 63
+    Top = 69
     Width = 364
     Height = 23
     Margins.Left = 15
@@ -117,6 +119,7 @@ object FormDownloader: TFormDownloader
     Caption = 'Panel1'
     ShowCaption = False
     TabOrder = 1
+    ExplicitTop = 63
     object pbAll: TProgressBar
       AlignWithMargins = True
       Left = 0

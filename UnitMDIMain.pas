@@ -13,6 +13,7 @@ Uses
    System.SysUtils,
    System.Types,
    System.Variants,
+   System.UITypes,
    DateUtils,
    Clipbrd,
    StrUtils,
@@ -1700,7 +1701,6 @@ Var
 
 Var
    varAppGrp: TEApplicationGroup;
-   iCurrGroupID: Integer;
    varCurrNode, varParentNode, varCurrLabelNode: TTreeNode;
    varCurrMenuGroup, varCurrMenuItem: TMenuItem;
    varGroupNames: TArray<String>;

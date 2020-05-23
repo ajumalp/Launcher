@@ -25,13 +25,13 @@ Uses
    Data.Win.ADODB,
    Data.DBXInterBase;
 
-   Const
-      cDB_FIELD_OID = 'OID';
-      cDB_FIELD_PARENTID = 'PARENTID';
-      cDB_FIELD_NAME = 'NAME';
-      cDB_FIELD_VALUE = 'VALUE';
-      cDB_FIELD_STATUS = 'STATUS';
-      cDB_FIELD_ISUNIQUE = 'ISUNIQUE';
+  Const
+    cDB_FIELD_OID = 'OID';
+    cDB_FIELD_PARENTID = 'PARENTID';
+    cDB_FIELD_NAME = 'NAME';
+    cDB_FIELD_VALUE = 'VALUE';
+    cDB_FIELD_STATUS = 'STATUS';
+    cDB_FIELD_ISUNIQUE = 'ISUNIQUE';
 
 Type
    TdmMain = Class;
@@ -226,9 +226,9 @@ Type
       qrySTDBMain: TADOQuery;
 
       Procedure DataModuleCreate(Sender: TObject);
-    procedure clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet;
-      E: EReconcileError; UpdateKind: TUpdateKind;
-      var Action: TReconcileAction);
+      procedure clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet;
+        E: EReconcileError; UpdateKind: TUpdateKind;
+        var Action: TReconcileAction);
    Public
       Function BuildConnectionString(Const aDatabase: String): String;
       Property GeneralDSet: TClientDataSet Read clntDSetSTDBMain;

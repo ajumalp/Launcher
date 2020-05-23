@@ -163,7 +163,6 @@ Function GetAppVersionFromSite(Const aUniqueAppCode: String; Const aLink: String
 Var
    varHtttp: TIdHTTP;
    varList: TStringList;
-   iCntr: Integer;
 Begin
    Result := '';
 

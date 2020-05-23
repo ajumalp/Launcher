@@ -6,6 +6,7 @@ unit ESoft.Launcher.UI.ErrorViewer;
 Interface
 
 uses
+  System.UITypes,
   SysUtils,
   Forms,
   StdCtrls,

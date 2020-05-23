@@ -32,7 +32,7 @@ object FormClipboardBrowser: TFormClipboardBrowser
       Left = 10
       Top = 5
       Width = 37
-      Height = 28
+      Height = 15
       Margins.Left = 8
       Align = alLeft
       Caption = 'Search'
@@ -163,9 +163,9 @@ object FormClipboardBrowser: TFormClipboardBrowser
     Font.Height = -11
     Font.Name = 'Tahoma'
     Font.Style = []
-    ParentFont = False
     ScrollBars = ssBoth
     TabOrder = 3
+    Zoom = 100
     OnExit = DBRichEditDataExit
   end
   object ClntDSetClipBboardItems: TClientDataSet

@@ -12,6 +12,7 @@ Uses
    System.Classes,
    System.StrUtils,
    System.Types,
+   System.UITypes,
    Vcl.StdCtrls,
    Vcl.Forms,
    IniFiles,
@@ -51,7 +52,7 @@ Type
    TEApplicationGroup = Class;
    TEApplicationGroups = Class;
 
-   TEApplication = Class(TPersistent, IEApplication)
+   TEApplication = Class(TInterfacedObject, IEApplication)
    Private
       // Private declarations. Variables/Methods can be access inside this class and other class in the same unit. { Ajmal }
    Strict Private
@@ -76,13 +77,9 @@ Type
       Constructor Create(Const aOwner: TEApplicationGroup);
       Destructor Destroy; override;
 
-      Function QueryInterface(Const IID: TGUID; Out Obj): HRESULT; Stdcall;
-      Function _AddRef: Integer; Stdcall;
-      Function _Release: Integer; Stdcall;
-
       Function TargetBranchPath: String;
       Function TargetFolder: String;
-      Function RunExecutable(aParameter: String = ''): Boolean;
+      Procedure RunExecutable(aParameter: String = '');
       Function UnZip: Boolean;
       Function CopyFromSourceFolder: Boolean;
 
@@ -141,7 +138,6 @@ Type
       Function InsertItem: TEApplication; Overload;
       Function GetIcon: TIcon;
       Function GetFinalSourceFolder: String;
-      procedure SetSourceFolderPrefix(const Value: String);
       Function GetSubItems: TEApplicationGroups;
    Public
       Constructor Create;
@@ -152,7 +148,7 @@ Type
       Function _Release: Integer; Stdcall;
 
       Function TargetFolder: String;
-      Function RunExecutable(aParameter: String = ''): Boolean;
+      Procedure RunExecutable(aParameter: String = '');
       Function UnZip: Boolean;
       Function CopyFromSourceFolder: Boolean;
       Function NeedToCopy: Boolean;
@@ -501,7 +497,7 @@ Begin
    Inherited;
 End;
 
-Function TEApplicationGroup.RunExecutable(aParameter: String): Boolean;
+Procedure TEApplicationGroup.RunExecutable(aParameter: String);
 Begin
    If Not IsApplication Then
       Raise Exception.Create('Execution failed. Group is not created as application.');
@@ -600,11 +596,6 @@ Begin
    Else
       FSourceFolderCopyTo := aValue;
 End;
-
-procedure TEApplicationGroup.SetSourceFolderPrefix(const Value: String);
-begin
-  FSourceFolderPrefix := Value;
-end;
 
 Function TEApplicationGroup.TargetFolder: String;
 Begin
@@ -851,11 +842,6 @@ Begin
    End;
 End;
 
-Function TEApplication.QueryInterface(Const IID: TGUID; Out Obj): HRESULT;
-Begin
-   Inherited;
-End;
-
 Function TEApplication.ReleaseVersionName: String;
 Var
    sRelease: String;
@@ -914,7 +900,7 @@ Begin
    End;
 End;
 
-Function TEApplication.RunExecutable(aParameter: String): Boolean;
+Procedure TEApplication.RunExecutable(aParameter: String);
 var
    sFileName: String;
    sTargetFolder: String;
@@ -987,11 +973,11 @@ Function TEApplication.TargetFolder: String;
 var
   sPath: String;
 Begin
-   sPath := IncludeTrailingBackslash(Owner.TargetFolder);
-   If Owner.CreateFolder Then
-      Result := sPath + TargetBranchPath + Name
-   Else
-      Result := sPath;
+  sPath := IncludeTrailingBackslash(Owner.TargetFolder);
+  If Owner.CreateFolder Then
+    Result := sPath + TargetBranchPath + Name
+  Else
+    Result := sPath;
 End;
 
 Function TEApplication.UnZip: Boolean;
@@ -1059,16 +1045,6 @@ Begin
       sVersion := StrSubString(Length(Owner.BranchingSufix), sVersion);
 
    Result:= SplitString(sVersion, cBRANCH_VERSION_SEPERATOR);
-End;
-
-Function TEApplication._AddRef: Integer;
-Begin
-   Inherited;
-End;
-
-Function TEApplication._Release: Integer;
-Begin
-   Inherited;
 End;
 
 End.

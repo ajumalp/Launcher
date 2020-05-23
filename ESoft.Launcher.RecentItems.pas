@@ -27,7 +27,7 @@ Type
       Function GetFixedParameter: String;
       Function GetLastUsedParamName: String;
       Procedure SetLastUsedParamName(Const aValue: String);
-      Function RunExecutable(aParameter: String = ''): Boolean;
+      Procedure RunExecutable(aParameter: String = '');
       Function UnZip: Boolean;
       Function CopyFromSourceFolder: Boolean;
       Function GetIcon: TIcon;
@@ -42,7 +42,7 @@ Type
 
    TERecentItems = Class; // Forward declaration { Ajmal }
 
-   TERecentItem = Class(TPersistent, IEApplication)
+   TERecentItem = Class(TInterfacedObject, IEApplication)
    Strict Private
       FRunAsAdmin: TCheckBoxState;
       FOwner: TERecentItems;
@@ -66,11 +66,7 @@ Type
       Constructor Create(Const aOwner: TERecentItems; Const aName: String; Const aSourceFolder: String = ''; Const aExecutableName: String = '');
       Destructor Destroy; Override;
 
-      Function QueryInterface(Const IID: TGUID; Out Obj): HRESULT; Stdcall;
-      Function _AddRef: Integer; Stdcall;
-      Function _Release: Integer; Stdcall;
-
-      Function RunExecutable(aParameter: String = ''): Boolean;
+      Procedure RunExecutable(aParameter: String = '');
       Function UnZip: Boolean;
       Function CopyFromSourceFolder: Boolean;
 
@@ -196,12 +192,7 @@ Begin
       FOwner.DoChange(Self);
 End;
 
-Function TERecentItem.QueryInterface(Const IID: TGUID; Out Obj): HRESULT;
-Begin
-   Inherited;
-End;
-
-Function TERecentItem.RunExecutable(aParameter: String): Boolean;
+Procedure TERecentItem.RunExecutable(aParameter: String);
 Begin
    If (aParameter = '') And (Parameter.Count > 0) Then
       aParameter := Parameter[0];
@@ -229,16 +220,6 @@ End;
 Function TERecentItem.UnZip: Boolean;
 Begin
    Result := True;
-End;
-
-Function TERecentItem._AddRef: Integer;
-Begin
-   Inherited;
-End;
-
-Function TERecentItem._Release: Integer;
-Begin
-   Inherited;
 End;
 
 { TERecentItems }

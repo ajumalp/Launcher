@@ -11,6 +11,7 @@ Uses
    System.SysUtils,
    System.Variants,
    System.Classes,
+   System.UITypes,
    Vcl.Graphics,
    Vcl.Controls,
    Vcl.Forms,
@@ -81,7 +82,7 @@ Type
       Property Items: TEDownloaderItemDict Read GetItems;
    End;
 
-   TEDownloadManager = Class(TPersistent, IEDownloadManager)
+   TEDownloadManager = Class(TInterfacedObject, IEDownloadManager)
    Strict Private
       FFileSize: Int64;
       FURL, FFileName: String;
@@ -95,10 +96,6 @@ Type
       Procedure SetURL(Const Value: String);
       Function GetPacketSize: Integer;
       Function GetItems: TEDownloaderItemDict;
-
-      Function QueryInterface(Const IID: TGUID; Out Obj): HRESULT; Stdcall;
-      Function _AddRef: Integer; Stdcall;
-      Function _Release: Integer; Stdcall;
    Private
       FItems: TEDownloaderItemDict;
       Property URL: String Read FURL Write SetURL;
@@ -257,14 +254,6 @@ Begin
    Result := Dialog.bkGndWorker.IsWorking;
 End;
 
-Function TEDownloadManager.QueryInterface(Const IID: TGUID; Out Obj): HRESULT;
-Begin
-   If GetInterface(IID, Obj) Then
-      Result := 0
-   Else
-      Result := E_NOINTERFACE;
-End;
-
 Procedure TEDownloadManager.SetCaption(Const Value: String);
 Begin
    Dialog.Caption := Value;
@@ -277,17 +266,6 @@ Begin
       FURL := Value;
       FFileSize := -1;
    End;
-End;
-
-Function TEDownloadManager._AddRef: Integer;
-Begin
-   Inherited;
-End;
-
-Function TEDownloadManager._Release: Integer;
-Begin
-   Free;
-   Inherited;
 End;
 
 Procedure TFormDownloader.AdjustSize;
@@ -330,32 +308,35 @@ Begin
             If Assigned(hService) Then
             Begin
                varFileStrm := TFileStream.Create(FDownloader.FileName, fmCreate);
-               iProgress := 0;
-               While Not Worker.CancellationPending Do
-               Begin
-                  If FPaused Then
-                  Begin
-                     Sleep(1);
-                     Continue;
-                  End;
-                  dwBytesRead := FDownloader.PacketSize;
-                  InternetReadFile(hService, @lpBuffer, FDownloader.PacketSize, dwBytesRead);
-                  If dwBytesRead = 0 Then
-                     Break;
-                  lpBuffer[dwBytesRead] := #0;
-                  varFileStrm.WriteBuffer(lpBuffer, dwBytesRead);
-                  Inc(iProgress);
-                  Worker.ReportProgress(iProgress);
-               End;
+               Try
+                 iProgress := 0;
+                 While Not Worker.CancellationPending Do
+                 Begin
+                    If FPaused Then
+                    Begin
+                       Sleep(1);
+                       Continue;
+                    End;
+                    dwBytesRead := FDownloader.PacketSize;
+                    InternetReadFile(hService, @lpBuffer, FDownloader.PacketSize, dwBytesRead);
+                    If dwBytesRead = 0 Then
+                       Break;
+                    lpBuffer[dwBytesRead] := #0;
+                    varFileStrm.WriteBuffer(lpBuffer, dwBytesRead);
+                    Inc(iProgress);
+                    Worker.ReportProgress(iProgress);
+                 End;
 
-               If Worker.CancellationPending Then
-                  Worker.AcceptCancellation
-               Else
-                  Worker.ReportProgress(cProgressFull);
+                 If Worker.CancellationPending Then
+                    Worker.AcceptCancellation
+                 Else
+                    Worker.ReportProgress(cProgressFull);
+               Finally
+                 varFileStrm.Free;
+               End;
             End;
          End;
       Finally
-         varFileStrm.Free;
          InternetSetOption(hSession, INTERNET_OPTION_RESET_URLCACHE_SESSION, 0, 0);
          InternetCloseHandle(hService);
          InternetCloseHandle(hSession);
