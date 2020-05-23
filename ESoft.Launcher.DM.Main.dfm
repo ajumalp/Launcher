@@ -1,7 +1,7 @@
 object dmMain: TdmMain
   OldCreateOrder = False
   OnCreate = DataModuleCreate
-  Height = 143
+  Height = 137
   Width = 223
   object clntDSetSTDBMain: TClientDataSet
     Aggregates = <>
@@ -16,19 +16,31 @@ object dmMain: TdmMain
     Left = 40
     Top = 72
   end
-  object SQLCnnMain: TADOConnection
-    ConnectionString = 
-      'DRIVER=SQLite3 ODBC Driver;Database=E:\Other Files\Ajmal\Project' +
-      's\GitHub\Launcher\trunk\Win32\Debug\launcher.db3;LongNames=0;Tim' +
-      'eout=1000;NoTXN=0;SyncPragma=NORMAL;StepAPI=0;'
+  object SQLCnnMain: TSQLConnection
+    DriverName = 'Sqlite'
+    KeepConnection = False
+    LoginPrompt = False
+    Params.Strings = (
+      'DriverUnit=Data.DbxSqlite'
+      
+        'DriverPackageLoader=TDBXSqliteDriverLoader,DBXSqliteDriver250.bp' +
+        'l'
+      
+        'MetaDataPackageLoader=TDBXSqliteMetaDataCommandFactory,DbxSqlite' +
+        'Driver250.bpl'
+      'FailIfMissing=True'
+      
+        'Database=E:\Other Files\Ajmal\Projects\GitHub\Launcher\trunk\Win' +
+        '32\Debug\Build\launcher.db3')
     Left = 40
     Top = 16
   end
-  object qrySTDBMain: TADOQuery
-    Connection = SQLCnnMain
-    Parameters = <>
+  object qrySTDBMain: TSQLQuery
+    MaxBlobSize = -1
+    Params = <>
     SQL.Strings = (
       'SELECT * FROM STDBMAIN ORDER BY PARENTID, OID')
+    SQLConnection = SQLCnnMain
     Left = 144
     Top = 16
   end

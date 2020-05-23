@@ -21,9 +21,7 @@ Uses
    Datasnap.DBClient,
    Generics.Collections,
    Variants,
-   VarUtils,
-   Data.Win.ADODB,
-   Data.DBXInterBase;
+   Data.FMTBcd;
 
   Const
     cDB_FIELD_OID = 'OID';
@@ -31,7 +29,6 @@ Uses
     cDB_FIELD_NAME = 'NAME';
     cDB_FIELD_VALUE = 'VALUE';
     cDB_FIELD_STATUS = 'STATUS';
-    cDB_FIELD_ISUNIQUE = 'ISUNIQUE';
 
 Type
    TdmMain = Class;
@@ -168,7 +165,7 @@ Type
       Function GetRootNode: IESTDBNode;
       Function GetChildNode(aNodeName: String): IESTDBNode;
       Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
-      Function GetConnection: TADOConnection;
+      Function GetConnection: TSQLConnection;
 
       Function SaveToDB: Integer;
       Function NextOID: Int64;
@@ -177,7 +174,7 @@ Type
       Function NodeExists(Const aParentID: Int64; Const aNodeName: String): Boolean;
       Procedure PurgeDatabase;
 
-      Property Connection: TADOConnection Read GetConnection;
+      Property Connection: TSQLConnection Read GetConnection;
       Property RootNode: IESTDBNode Read GetRootNode;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
       Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
@@ -194,8 +191,8 @@ Type
       Function GetGeneralDSet: TClientDataSet;
       Function GetChildNode(aNodeName: String): IESTDBNode;
       Function GetChildNodeEx(aNodeName: String; aDefaultValue: Variant): IESTDBNode;
-      Procedure ExtractDatabaseFile;
-      Function GetConnection: TADOConnection;
+      Procedure ExtractDatabaseFile(Const aResName, aFileName: String);
+      Function GetConnection: TSQLConnection;
       Procedure ReloadData;
       Procedure ResetObjectIDPK;
 
@@ -213,7 +210,7 @@ Type
       Function NodeExists(Const aParentID: Int64; Const aNodeName: String): Boolean;
       Procedure PurgeDatabase;
 
-      Property Connection: TADOConnection Read GetConnection;
+      Property Connection: TSQLConnection Read GetConnection;
       Property RootNode: IESTDBNode Read GetRootNode;
       Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
       Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
@@ -222,8 +219,8 @@ Type
    TdmMain = Class(TDataModule)
       clntDSetSTDBMain: TClientDataSet;
       dsProSTDBMain: TDataSetProvider;
-      SQLCnnMain: TADOConnection;
-      qrySTDBMain: TADOQuery;
+    SQLCnnMain: TSQLConnection;
+    qrySTDBMain: TSQLQuery;
 
       Procedure DataModuleCreate(Sender: TObject);
       procedure clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet;
@@ -272,15 +269,15 @@ end;
 
 Procedure TdmMain.DataModuleCreate(Sender: TObject);
 Begin
-   SQLCnnMain.ConnectionString := BuildConnectionString('launcher.db3');
-   Try
-      SQLCnnMain.LoginPrompt := False;
-      SQLCnnMain.Connected := True;
-      SQLCnnMain.Connected := False;
-   Except
-      On Ex: Exception Do
-         MessageDlg(Ex.Message, mtError, [mbOK], 0);
-   End;
+  SQLCnnMain.Params.Values['Database'] := ExtractFilePath(ParamStr(0)) + 'launcher.db3';
+  Try
+    SQLCnnMain.LoginPrompt := False;
+    SQLCnnMain.Connected := True;
+    SQLCnnMain.Connected := False;
+  Except
+    On Ex: Exception Do
+      MessageDlg(Ex.Message, mtError, [mbOK], 0);
+  End;
 End;
 
 { TESTDatabase }
@@ -292,7 +289,7 @@ begin
   ReloadData;
 end;
 
-Function TESTDatabase.GetConnection: TADOConnection;
+Function TESTDatabase.GetConnection: TSQLConnection;
 Begin
    Result := DataModule.SQLCnnMain;
 End;
@@ -319,13 +316,13 @@ end;
 
 Function TESTDatabase.FetchQuery(const aQuery: String): Variant;
 Var
-   varSQLQuery: TADOQuery;
+   varSQLQuery: TSQLQuery;
 Begin
    Result := Null;
 
-   varSQLQuery := TADOQuery.Create(Nil);
+   varSQLQuery := TSQLQuery.Create(Nil);
    Try
-     varSQLQuery.Connection := DataModule.SQLCnnMain;
+     varSQLQuery.SQLConnection := DataModule.SQLCnnMain;
       varSQLQuery.SQL.Text := aQuery;
       varSQLQuery.Open;
       If Not varSQLQuery.IsEmpty Then
@@ -338,11 +335,11 @@ End;
 
 Function TESTDatabase.ExecuteQuery(const aQuery: String): Integer;
 Var
-   varSQLQuery: TADOQuery;
+   varSQLQuery: TSQLQuery;
 Begin
-   varSQLQuery := TADOQuery.Create(Nil);
+   varSQLQuery := TSQLQuery.Create(Nil);
    Try
-      varSQLQuery.Connection := DataModule.SQLCnnMain;
+      varSQLQuery.SQLConnection := DataModule.SQLCnnMain;
       varSQLQuery.SQL.Text := aQuery;
       Result := varSQLQuery.ExecSQL;
    Finally
@@ -350,14 +347,17 @@ Begin
    End;
 End;
 
-Procedure TESTDatabase.ExtractDatabaseFile;
+Procedure TESTDatabase.ExtractDatabaseFile(Const aResName, aFileName: String);
 Var
   varResStream: TResourceStream;
 Begin
-  varResStream := TResourceStream.Create(HInstance, 'SQLITE_DB', RT_RCDATA);
+  If FileExists(ExtractFilePath(ParamStr(0)) + aFileName) Then
+    Exit;
+
+  varResStream := TResourceStream.Create(HInstance, aResName, RT_RCDATA);
   try
     varResStream.Position := 0;
-    varResStream.SaveToFile(ExtractFilePath(ParamStr(0)) + 'launcher.db3');
+    varResStream.SaveToFile(ExtractFilePath(ParamStr(0)) + aFileName);
   finally
     varResStream.Free;
   end;
@@ -375,14 +375,15 @@ End;
 
 Function TESTDatabase.GetDataModule: TdmMain;
 Begin
-   If Not Assigned(FDataModule) Then
-   Begin
-      If Not FileExists(ExtractFilePath(ParamStr(0)) + 'launcher.db3') Then 
-         ExtractDatabaseFile;
-      FDataModule := TdmMain.Create(Nil);
-      ReloadData;
-   End;
-   Result := FDataModule;
+  If Not Assigned(FDataModule) Then
+  Begin
+    ExtractDatabaseFile('sqlite_db', 'launcher.db3');
+    ExtractDatabaseFile('sqlite_dll', 'sqlite3.dll');
+
+    FDataModule := TdmMain.Create(Nil);
+    ReloadData;
+  End;
+  Result := FDataModule;
 End;
 
 Function TESTDatabase.GetRootNode: IESTDBNode;
@@ -436,7 +437,7 @@ Begin
   If FNextOID = -1 Then
     Exit;
 
-  DataModule.SQLCnnMain.Execute(cSQL_RESET_OID);
+  DataModule.SQLCnnMain.ExecuteDirect(cSQL_RESET_OID);
   FNextOID := -1;
 End;
 
@@ -490,19 +491,19 @@ Procedure TESTDBNode.Delete(Const aDeleteType: eSTDBItemStatus = sdsDeleted; Con
   Var
     lOID: Int64;
     varOIDList: TList<Int64>;
-    varSQLQuery: TADOQuery;
+    varSQLQuery: TSQLQuery;
   Begin
     varOIDList := TList<Int64>.Create;
-    varSQLQuery := TADOQuery.Create(Nil);
+    varSQLQuery := TSQLQuery.Create(Nil);
     Try
       With varSQLQuery Do
       Begin
-        varSQLQuery.Connection := STDatabase.Connection;
+        varSQLQuery.SQLConnection := STDatabase.Connection;
         SQL.Text := 'SELECT OID FROM STDBMAIN WHERE PARENTID = ' + aOID.ToString;
         Open;
         While Not Eof Do
         Begin
-          varOIDList.Add(FieldByName('OID').AsLargeInt);
+          varOIDList.Add(FieldByName('OID').AsInteger);
           Next;
         End;
         Close;
@@ -586,9 +587,10 @@ Begin
       FDataset.Append;
       FDataset.FieldByName(cDB_FIELD_OID).ReadOnly := False;
       FDataset.FieldByName(cDB_FIELD_OID).Value := STDatabase.NextOID;
-      FDataset.FieldByName(cDB_FIELD_PARENTID).AsLargeInt := OID;
+      FDataset.FieldByName(cDB_FIELD_PARENTID).AsInteger := OID;
       FDataset.FieldByName(cDB_FIELD_NAME).AsString := aNodeName;
       FDataset.FieldByName(cDB_FIELD_VALUE).Value := aDefaultValue;
+      FDataset.FieldByName(cDB_FIELD_STATUS).AsString := 'A';
       FDataset.Post;
       
       Result.Value := aDefaultValue;
@@ -660,7 +662,7 @@ Begin
    Begin  
      FDataset.Next;
      Try              
-        FIsLastChild := FDataset.FieldByName(cDB_FIELD_PARENTID).AsLargeInt <> OID;
+        FIsLastChild := FDataset.FieldByName(cDB_FIELD_PARENTID).AsInteger <> OID;
      Finally
        FDataset.Prior;
      End;
@@ -682,7 +684,7 @@ Begin
    If Not Locate Then
       Raise Exception.Create('Invalid Node Access');
    
-   FOID := FDataset.FieldByName(cDB_FIELD_OID).AsLargeInt;
+   FOID := FDataset.FieldByName(cDB_FIELD_OID).AsInteger;
    FValue := FDataset.FieldByName(cDB_FIELD_VALUE).AsVariant;
       
    sStatus := FDataset.FieldByName(cDB_FIELD_STATUS).AsString.Trim;
