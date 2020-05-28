@@ -15,7 +15,8 @@ Uses
   Vcl.StdCtrls,
   Vcl.ActnList,
   System.Zip,
-  ESoft.Utils;
+  ESoft.Utils, 
+  System.Actions;
 
 Type
   TFormBackupRestore = Class(TForm)
@@ -59,14 +60,20 @@ Procedure TFormBackupRestore.btnRestoreClick(Sender: TObject);
     DeleteFile(FormMDIMain.ParentFolder + 'Old_' + cConfig_INI);
     DeleteFile(FormMDIMain.ParentFolder + 'Old_' + cGroup_INI);
     DeleteFile(FormMDIMain.ParentFolder + 'Old_' + cParam_INI);
+    DeleteFile(FormMDIMain.ParentFolder + 'Old_' + cClipbord_Data);
+    DeleteFile(FormMDIMain.ParentFolder + 'Old_' + cDatabaseFileName);
 
     RenameFile(FormMDIMain.ParentFolder + cConfig_INI, FormMDIMain.ParentFolder + 'Old_' + cConfig_INI);
     RenameFile(FormMDIMain.ParentFolder + cGroup_INI, FormMDIMain.ParentFolder + 'Old_' + cGroup_INI);
     RenameFile(FormMDIMain.ParentFolder + cParam_INI, FormMDIMain.ParentFolder + 'Old_' + cParam_INI);
+    RenameFile(FormMDIMain.ParentFolder + cClipbord_Data, FormMDIMain.ParentFolder + 'Old_' + cClipbord_Data);
+    RenameFile(FormMDIMain.ParentFolder + cDatabaseFileName, FormMDIMain.ParentFolder + 'Old_' + cDatabaseFileName);
 
     DeleteFile(FormMDIMain.ParentFolder + cConfig_INI);
     DeleteFile(FormMDIMain.ParentFolder + cGroup_INI);
     DeleteFile(FormMDIMain.ParentFolder + cParam_INI);
+    DeleteFile(FormMDIMain.ParentFolder + cClipbord_Data);
+    DeleteFile(FormMDIMain.ParentFolder + cDatabaseFileName);
   End;
 
 Var

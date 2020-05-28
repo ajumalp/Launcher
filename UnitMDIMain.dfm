@@ -48,9 +48,9 @@ object FormMDIMain: TFormMDIMain
   object tvApplications: TTreeView
     AlignWithMargins = True
     Left = 3
-    Top = 143
+    Top = 249
     Width = 354
-    Height = 283
+    Height = 177
     Align = alClient
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText
@@ -68,6 +68,8 @@ object FormMDIMain: TFormMDIMain
     TabOrder = 0
     OnDblClick = tvApplicationsDblClick
     OnMouseDown = tvApplicationsMouseDown
+    ExplicitTop = 143
+    ExplicitHeight = 283
   end
   object PanelDeveloper: TPanel
     AlignWithMargins = True
@@ -92,13 +94,14 @@ object FormMDIMain: TFormMDIMain
   object grpSettings: TGroupBox
     AlignWithMargins = True
     Left = 3
-    Top = 3
+    Top = 109
     Width = 354
     Height = 134
     Align = alTop
     Caption = ' Settings '
     TabOrder = 2
     Visible = False
+    ExplicitTop = 3
     object pnlConnection: TPanel
       AlignWithMargins = True
       Left = 5
@@ -167,7 +170,7 @@ object FormMDIMain: TFormMDIMain
         Left = 8
         Top = 3
         Width = 66
-        Height = 13
+        Height = 21
         Margins.Left = 8
         Align = alLeft
         Caption = 'Connections'
@@ -178,6 +181,7 @@ object FormMDIMain: TFormMDIMain
         Font.Style = [fsBold]
         ParentFont = False
         Layout = tlCenter
+        ExplicitHeight = 13
       end
       object sBtnBrowseConnection: TSpeedButton
         AlignWithMargins = True
@@ -276,6 +280,144 @@ object FormMDIMain: TFormMDIMain
           '<ALL>'
           'Applications'
           'Categories')
+      end
+    end
+  end
+  object grpSmartPlugSettings: TGroupBox
+    AlignWithMargins = True
+    Left = 3
+    Top = 3
+    Width = 354
+    Height = 100
+    Align = alTop
+    Caption = ' Smart Plug Settings '
+    TabOrder = 3
+    Visible = False
+    object Panel3: TPanel
+      AlignWithMargins = True
+      Left = 5
+      Top = 23
+      Width = 344
+      Height = 27
+      Margins.Top = 8
+      Align = alTop
+      BevelOuter = bvNone
+      TabOrder = 0
+      ExplicitLeft = 10
+      ExplicitTop = 31
+      object Label6: TLabel
+        AlignWithMargins = True
+        Left = 8
+        Top = 3
+        Width = 65
+        Height = 21
+        Margins.Left = 8
+        Align = alLeft
+        AutoSize = False
+        Caption = 'Turn OFF ID'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Times New Roman'
+        Font.Style = [fsBold]
+        ParentFont = False
+        Layout = tlCenter
+      end
+      object edtTurnOFFID: TButtonedEdit
+        AlignWithMargins = True
+        Left = 84
+        Top = 3
+        Width = 216
+        Height = 21
+        Margins.Left = 8
+        Margins.Right = 8
+        Align = alClient
+        Images = ImageList_20
+        RightButton.ImageIndex = 34
+        RightButton.PressedImageIndex = 4
+        RightButton.Visible = True
+        TabOrder = 0
+        OnRightButtonClick = edtTurnOFFIDRightButtonClick
+        ExplicitLeft = 85
+        ExplicitWidth = 217
+      end
+      object edtMaxThreshold: TEdit
+        AlignWithMargins = True
+        Left = 311
+        Top = 3
+        Width = 30
+        Height = 21
+        Align = alRight
+        BiDiMode = bdRightToLeft
+        MaxLength = 3
+        NumbersOnly = True
+        ParentBiDiMode = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        Text = '100'
+      end
+    end
+    object Panel4: TPanel
+      AlignWithMargins = True
+      Left = 5
+      Top = 61
+      Width = 344
+      Height = 27
+      Margins.Top = 8
+      Align = alTop
+      BevelOuter = bvNone
+      TabOrder = 1
+      object Label7: TLabel
+        AlignWithMargins = True
+        Left = 8
+        Top = 3
+        Width = 65
+        Height = 21
+        Margins.Left = 8
+        Align = alLeft
+        AutoSize = False
+        Caption = 'Turn ON ID'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Times New Roman'
+        Font.Style = [fsBold]
+        ParentFont = False
+        Layout = tlCenter
+      end
+      object edtTurnONID: TButtonedEdit
+        AlignWithMargins = True
+        Left = 84
+        Top = 3
+        Width = 216
+        Height = 21
+        Margins.Left = 8
+        Margins.Right = 8
+        Align = alClient
+        Images = ImageList_20
+        RightButton.ImageIndex = 34
+        RightButton.PressedImageIndex = 4
+        RightButton.Visible = True
+        TabOrder = 0
+        OnRightButtonClick = edtTurnOFFIDRightButtonClick
+        ExplicitTop = -5
+      end
+      object edtMinThreshold: TEdit
+        AlignWithMargins = True
+        Left = 311
+        Top = 3
+        Width = 30
+        Height = 21
+        Align = alRight
+        BiDiMode = bdRightToLeft
+        MaxLength = 2
+        NumbersOnly = True
+        ParentBiDiMode = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        Text = '20'
       end
     end
   end
@@ -442,11 +584,6 @@ object FormMDIMain: TFormMDIMain
         AutoCheck = True
         Caption = 'Start Minimized'
       end
-      object MItemShowHideSettings: TMenuItem
-        AutoCheck = True
-        Caption = 'Show/Hide'
-        OnClick = MItemShowHideSettingsClick
-      end
       object MItemImmediateUpdate: TMenuItem
         AutoCheck = True
         Caption = 'Immediate Update'
@@ -454,6 +591,28 @@ object FormMDIMain: TFormMDIMain
       object MItemBattSP: TMenuItem
         Caption = 'Enable Battery SP'
         OnClick = MItemBattSPClick
+      end
+      object MItemShowHideSettings: TMenuItem
+        Caption = 'Show/Hide'
+        object MItemHideAllSettings: TMenuItem
+          Caption = 'Hide All'
+          Checked = True
+          GroupIndex = 25
+          RadioItem = True
+          OnClick = MItemHideAllSettingsClick
+        end
+        object MItemGeneralSettings: TMenuItem
+          Caption = 'General Settings'
+          GroupIndex = 25
+          RadioItem = True
+          OnClick = MItemGeneralSettingsClick
+        end
+        object MItemSmartPlugSettings: TMenuItem
+          Caption = 'Smart Plug Settings'
+          GroupIndex = 25
+          RadioItem = True
+          OnClick = MItemSmartPlugSettingsClick
+        end
       end
       object N5: TMenuItem
         Caption = '-'

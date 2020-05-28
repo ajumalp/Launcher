@@ -25,10 +25,6 @@ object FormBackupRestore: TFormBackupRestore
     Height = 86
     Align = alClient
     TabOrder = 0
-    ExplicitLeft = 0
-    ExplicitTop = 160
-    ExplicitWidth = 185
-    ExplicitHeight = 105
     object Label1: TLabel
       Left = 17
       Top = 17

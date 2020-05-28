@@ -75,6 +75,7 @@ Const
    cTemplateGroup_INI = 'TemplateGroup.eini';
    cParam_INI = 'Params.eini';
    cClipbord_Data = 'ClpBrd.edat';
+   cDatabaseFileName = 'launcher.db3';
    cConnectionState = 'CONNECTION_STATE';
 
    cSTDBNodeConfig = 'Config';
@@ -85,338 +86,357 @@ Const
 
    // In the order MMmmRRBB
    // M - Major, m - Minor, R - Release and B - Build { Ajmal }
-   cApplication_Version = 01000139;
-   cAppVersion = '1.0.1.39';
+   cApplication_Version = 02000112;
+   cAppVersion = '2.0.1.12';
 
 Type
-   // Forward declarations 
-   TFormMDIMain = Class;
+  // Forward declarations
+  TFormMDIMain = Class;
    
-   eTBatteryState = (ebsVeryLow, ebsLow, ebsNormal, ebsHigh, ebsFull);
-   TEBatterySmartPlug = Class   
-   Strict Private 
-      FOwner: TFormMDIMain;   
-      FRequestWaitInterval: Integer;
-      FTurnOnLevel: Integer;
-      FTurnOffLevel: Integer;
-      FTurnOnUniqueID: String;
-      FTurnOffUniqueID: String;
+  eTBatteryState = (ebsVeryLow, ebsLow, ebsNormal, ebsHigh, ebsFull);
+  TEBatterySmartPlug = Class
+  Strict Private
+    FOwner: TFormMDIMain;
+    FRequestWaitInterval: Integer;
 
-      Function GetEnabled: Boolean;
-      Procedure SetEnabled(const aValue: Boolean);
+    Function GetEnabled: Boolean;
+    Procedure SetEnabled(const aValue: Boolean);
 
-      Function GetBatteryPercent: Byte;
-      Function GetTimer: TTimer;
-      Procedure SetEnableSmartPlug(const aValue: Boolean);
-      Function GetBatteryState: eTBatteryState;
-   Public
-      FSysPowerStatus: TSystemPowerStatus;
+    Function GetBatteryPercent: Byte;
+    Function GetTimer: TTimer;
+    Procedure SetEnableSmartPlug(const aValue: Boolean);
+    Function GetBatteryState: eTBatteryState;
+    Function GetTurnOffLevel: Integer;
+    Function GetTurnOffUniqueID: String;
+    Function GetTurnOnLevel: Integer;
+    Function GetTurnOnUniqueID: String;
+    Procedure SetTurnOffLevel(aValue: Integer);
+    Procedure SetTurnOffUniqueID(const aValue: String);
+    Procedure SetTurnOnLevel(aValue: Integer);
+    Procedure SetTurnOnUniqueID(const aValue: String);
+  Public
+    FSysPowerStatus: TSystemPowerStatus;
 
-      Constructor Create(Const aOwner: TFormMDIMain);
-      Procedure Execute;
-      Function IsACInputAvailable: Boolean;
+    Constructor Create(Const aOwner: TFormMDIMain);
+    Procedure Execute;
+    Function IsACInputAvailable: Boolean;
 
-      Property Owner: TFormMDIMain Read FOwner;
-      Property SysPowerStatus: TSystemPowerStatus Read FSysPowerStatus;
-      Property BatteryPercent: Byte Read GetBatteryPercent;
-      Property Timer: TTimer Read GetTimer;
-      Property BatteryState: eTBatteryState Read GetBatteryState;
-      Property EnableSmartPlug: Boolean Write SetEnableSmartPlug;
+    Property Owner: TFormMDIMain Read FOwner;
+    Property SysPowerStatus: TSystemPowerStatus Read FSysPowerStatus;
+    Property BatteryPercent: Byte Read GetBatteryPercent;
+    Property Timer: TTimer Read GetTimer;
+    Property BatteryState: eTBatteryState Read GetBatteryState;
+    Property EnableSmartPlug: Boolean Write SetEnableSmartPlug;
       
-      Property Enabled: Boolean Read GetEnabled Write SetEnabled;
-      Property TurnOnLevel: Integer Read FTurnOnLevel Write FTurnOnLevel;
-      Property TurnOffLevel: Integer Read FTurnOffLevel Write FTurnOffLevel;
-      Property TurnOnUniqueID: String Read FTurnOnUniqueID Write FTurnOnUniqueID;
-      Property TurnOffUniqueID: String Read FTurnOffUniqueID Write FTurnOffUniqueID;
-   End;
+    Property Enabled: Boolean Read GetEnabled Write SetEnabled;
+    Property TurnOnLevel: Integer Read GetTurnOnLevel Write SetTurnOnLevel;
+    Property TurnOffLevel: Integer Read GetTurnOffLevel Write SetTurnOffLevel;
+    Property TurnOnUniqueID: String Read GetTurnOnUniqueID Write SetTurnOnUniqueID;
+    Property TurnOffUniqueID: String Read GetTurnOffUniqueID Write SetTurnOffUniqueID;
+  End;
 
-   TFormMDIMain = Class(TForm)
-      OpenDialog: TOpenDialog;
-      TrayIcon: TTrayIcon;
-      PopupMenuTray: TPopupMenu;
-      ApplicationEvents: TApplicationEvents;
-      PMItemExit: TMenuItem;
-      N1: TMenuItem;
-      PMItemShowHide: TMenuItem;
-      N2: TMenuItem;
-      PMItemAppSep: TMenuItem;
-      PopupMenuListView: TPopupMenu;
-      PMItemEditGroup: TMenuItem;
-      PMItemAddGroup: TMenuItem;
-      N3: TMenuItem;
-      PMItemUpdate: TMenuItem;
-      PMItemDeleteGroup: TMenuItem;
-      tvApplications: TTreeView;
-      MainMenu: TMainMenu;
-      MenuSettings: TMenuItem;
-      MenuFile: TMenuItem;
-      N4: TMenuItem;
-      MItemExit: TMenuItem;
-      MItemHide: TMenuItem;
-      MItemStartMinimized: TMenuItem;
-      MItemParameters: TMenuItem;
-      PanelDeveloper: TPanel;
-      MItemShowHideSettings: TMenuItem;
-      MItemAutoStart: TMenuItem;
-      PMItemTrayUpdate: TMenuItem;
-      N5: TMenuItem;
-      MItemBackup: TMenuItem;
-      MItemRestore: TMenuItem;
-      MItemAutobackup: TMenuItem;
-      MenuHelp: TMenuItem;
-      PMItemCheckforupdate: TMenuItem;
-      imlAppIcons: TPngImageList;
-      grpSettings: TGroupBox;
-      pnlConnection: TPanel;
-      Label1: TLabel;
-      Panel1: TPanel;
-      Label2: TLabel;
-      sBtnBrowseConnection: TSpeedButton;
-      edtConnection: TButtonedEdit;
-      hKeyGeneral: THotKey;
-      Label3: TLabel;
-      PMItemRecentItems: TMenuItem;
-      N6: TMenuItem;
-      PMItemNotes: TMenuItem;
-      PMItemAddFromClipboard: TMenuItem;
-      PMItemViewOrEditNotes: TMenuItem;
-      PMItemRunasAdministrator: TMenuItem;
-      Panel2: TPanel;
-      Label4: TLabel;
-      sEdtRecentItemCount: TSpinEdit;
-      PMItemApplications: TMenuItem;
-      PMItemCategories: TMenuItem;
-      Label5: TLabel;
-      cbGroupItems: TComboBox;
-      ImageList_20: TImageList;
-      tskDlgUpdateList: TTaskDialog;
-      bkGndUpdateAppList: TBackgroundWorker;
-      MItemImmediateUpdate: TMenuItem;
-      lblAppListNotUpdated: TLabel;
-      ActionListMain: TActionList;
-      actSendMailDeveloper: TSendMail;
-      tskDlgGetVersionDetails: TTaskDialog;
-      bkGndFetchAppVersionDetails: TBackgroundWorker;
-      PMItemFavorite: TMenuItem;
-      TimerBatterySmartPlug: TTimer;
-      MItemBattSP: TMenuItem;
-      MItemPurgeDB: TMenuItem;
-      Procedure sBtnBrowseConnectionClick(Sender: TObject);
-      Procedure edtConnectionRightButtonClick(Sender: TObject);
-      Procedure FormCreate(Sender: TObject);
-      Procedure FormDestroy(Sender: TObject);
-      Procedure FormHide(Sender: TObject);
-      Procedure PMItemShowHideClick(Sender: TObject);
-      Procedure PMItemExitClick(Sender: TObject);
-      Procedure PMItemEditGroupClick(Sender: TObject);
-      Procedure PopupMenuListViewPopup(Sender: TObject);
-      Procedure PMItemUpdateClick(Sender: TObject);
-      Procedure PMItemDeleteGroupClick(Sender: TObject);
-      Procedure PMItemAddGroupClick(Sender: TObject);
-      Procedure tvApplicationsDblClick(Sender: TObject);
-      Procedure PopupMenuTrayPopup(Sender: TObject);
-      Procedure ApplicationEventsActivate(Sender: TObject);
-      Procedure MItemParametersClick(Sender: TObject);
-      Procedure MItemShowHideSettingsClick(Sender: TObject);
-      Procedure MItemAutoStartClick(Sender: TObject);
-      Procedure MItemBackupClick(Sender: TObject);
-      Procedure MItemRestoreClick(Sender: TObject);
-      Procedure PMItemCheckforupdateClick(Sender: TObject);
-      Procedure FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
-      Procedure tvApplicationsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-      Procedure cbGroupItemsChange(Sender: TObject);
-      Procedure PMItemAddFromClipboardClick(Sender: TObject);
-      Procedure PMItemViewOrEditNotesClick(Sender: TObject);
-      procedure bkGndUpdateAppListWork(Worker: TBackgroundWorker);
-      procedure bkGndUpdateAppListWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
-      procedure tskDlgUpdateListButtonClicked(Sender: TObject; ModalResult: TModalResult; var CanClose: Boolean);
-      Procedure bkGndUpdateAppListWorkProgress(Worker: TBackgroundWorker; PercentDone: Integer);
-      Procedure PanelDeveloperClick(Sender: TObject);
-      Procedure bkGndFetchAppVersionDetailsWork(aWorker: TBackgroundWorker);
-      Procedure bkGndFetchAppVersionDetailsWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
-      Procedure tskDlgGetVersionDetailsButtonClicked(Sender: TObject; ModalResult: TModalResult; var CanClose: Boolean);
-      Procedure PMItemFavoriteClick(Sender: TObject);
-      Procedure TimerBatterySmartPlugTimer(aSender: TObject);
-      Procedure MItemBattSPClick(Sender: TObject);
-      Procedure MItemPurgeDBClick(Sender: TObject);
-      // Private declarations. Variables/Methods can be access inside this class and other class in the same unit. { Ajmal }
-   Strict Private
-      // Strict Private declarations. Variables/Methods can be access inside this class only. { Ajmal }
-      FFixedMenuItems: TList<TMenuItem>;
-      FHotKeyMain: NativeUInt;
-      FParameters: TEParameters;
-      FInitialized: Boolean;
-      FAppGroups, FTemplateGroups: TEApplicationGroups;
-      FParentFolder: String;
-      FConnections: TEConnections;
-      FDisplayLabels: TStringList;
-      FParamCategories: TStringList;
-      FRecentItems: TERecentItems;
-      FClipboardItems: TEClipboardItems;
-      FCurrentProgressMessage: String;
-      FPopupMenuClosed: Boolean;
-      FDownloadManager: IEDownloadManager;
-      FBatterySmartPlug: TEBatterySmartPlug;
-      FUseDatabase: Boolean;
+  TFormMDIMain = Class(TForm)
+    OpenDialog: TOpenDialog;
+    TrayIcon: TTrayIcon;
+    PopupMenuTray: TPopupMenu;
+    ApplicationEvents: TApplicationEvents;
+    PMItemExit: TMenuItem;
+    N1: TMenuItem;
+    PMItemShowHide: TMenuItem;
+    N2: TMenuItem;
+    PMItemAppSep: TMenuItem;
+    PopupMenuListView: TPopupMenu;
+    PMItemEditGroup: TMenuItem;
+    PMItemAddGroup: TMenuItem;
+    N3: TMenuItem;
+    PMItemUpdate: TMenuItem;
+    PMItemDeleteGroup: TMenuItem;
+    tvApplications: TTreeView;
+    MainMenu: TMainMenu;
+    MenuSettings: TMenuItem;
+    MenuFile: TMenuItem;
+    N4: TMenuItem;
+    MItemExit: TMenuItem;
+    MItemHide: TMenuItem;
+    MItemStartMinimized: TMenuItem;
+    MItemParameters: TMenuItem;
+    PanelDeveloper: TPanel;
+    MItemShowHideSettings: TMenuItem;
+    MItemAutoStart: TMenuItem;
+    PMItemTrayUpdate: TMenuItem;
+    N5: TMenuItem;
+    MItemBackup: TMenuItem;
+    MItemRestore: TMenuItem;
+    MItemAutobackup: TMenuItem;
+    MenuHelp: TMenuItem;
+    PMItemCheckforupdate: TMenuItem;
+    imlAppIcons: TPngImageList;
+    grpSettings: TGroupBox;
+    pnlConnection: TPanel;
+    Label1: TLabel;
+    Panel1: TPanel;
+    Label2: TLabel;
+    sBtnBrowseConnection: TSpeedButton;
+    edtConnection: TButtonedEdit;
+    hKeyGeneral: THotKey;
+    Label3: TLabel;
+    PMItemRecentItems: TMenuItem;
+    N6: TMenuItem;
+    PMItemNotes: TMenuItem;
+    PMItemAddFromClipboard: TMenuItem;
+    PMItemViewOrEditNotes: TMenuItem;
+    PMItemRunasAdministrator: TMenuItem;
+    Panel2: TPanel;
+    Label4: TLabel;
+    sEdtRecentItemCount: TSpinEdit;
+    PMItemApplications: TMenuItem;
+    PMItemCategories: TMenuItem;
+    Label5: TLabel;
+    cbGroupItems: TComboBox;
+    ImageList_20: TImageList;
+    tskDlgUpdateList: TTaskDialog;
+    bkGndUpdateAppList: TBackgroundWorker;
+    MItemImmediateUpdate: TMenuItem;
+    lblAppListNotUpdated: TLabel;
+    ActionListMain: TActionList;
+    actSendMailDeveloper: TSendMail;
+    tskDlgGetVersionDetails: TTaskDialog;
+    bkGndFetchAppVersionDetails: TBackgroundWorker;
+    PMItemFavorite: TMenuItem;
+    TimerBatterySmartPlug: TTimer;
+    MItemBattSP: TMenuItem;
+    MItemPurgeDB: TMenuItem;
+    grpSmartPlugSettings: TGroupBox;
+    MItemGeneralSettings: TMenuItem;
+    MItemSmartPlugSettings: TMenuItem;
+    MItemHideAllSettings: TMenuItem;
+    Panel3: TPanel;
+    Label6: TLabel;
+    edtTurnOFFID: TButtonedEdit;
+    edtMaxThreshold: TEdit;
+    Panel4: TPanel;
+    Label7: TLabel;
+    edtTurnONID: TButtonedEdit;
+    edtMinThreshold: TEdit;
+    Procedure sBtnBrowseConnectionClick(Sender: TObject);
+    Procedure edtConnectionRightButtonClick(Sender: TObject);
+    Procedure FormCreate(Sender: TObject);
+    Procedure FormDestroy(Sender: TObject);
+    Procedure FormHide(Sender: TObject);
+    Procedure PMItemShowHideClick(Sender: TObject);
+    Procedure PMItemExitClick(Sender: TObject);
+    Procedure PMItemEditGroupClick(Sender: TObject);
+    Procedure PopupMenuListViewPopup(Sender: TObject);
+    Procedure PMItemUpdateClick(Sender: TObject);
+    Procedure PMItemDeleteGroupClick(Sender: TObject);
+    Procedure PMItemAddGroupClick(Sender: TObject);
+    Procedure tvApplicationsDblClick(Sender: TObject);
+    Procedure PopupMenuTrayPopup(Sender: TObject);
+    Procedure ApplicationEventsActivate(Sender: TObject);
+    Procedure MItemParametersClick(Sender: TObject);
+    Procedure MItemAutoStartClick(Sender: TObject);
+    Procedure MItemBackupClick(Sender: TObject);
+    Procedure MItemRestoreClick(Sender: TObject);
+    Procedure PMItemCheckforupdateClick(Sender: TObject);
+    Procedure FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
+    Procedure tvApplicationsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    Procedure cbGroupItemsChange(Sender: TObject);
+    Procedure PMItemAddFromClipboardClick(Sender: TObject);
+    Procedure PMItemViewOrEditNotesClick(Sender: TObject);
+    procedure bkGndUpdateAppListWork(Worker: TBackgroundWorker);
+    procedure bkGndUpdateAppListWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
+    procedure tskDlgUpdateListButtonClicked(Sender: TObject; ModalResult: TModalResult; var CanClose: Boolean);
+    Procedure bkGndUpdateAppListWorkProgress(Worker: TBackgroundWorker; PercentDone: Integer);
+    Procedure PanelDeveloperClick(Sender: TObject);
+    Procedure bkGndFetchAppVersionDetailsWork(aWorker: TBackgroundWorker);
+    Procedure bkGndFetchAppVersionDetailsWorkComplete(Worker: TBackgroundWorker; Cancelled: Boolean);
+    Procedure tskDlgGetVersionDetailsButtonClicked(Sender: TObject; ModalResult: TModalResult; var CanClose: Boolean);
+    Procedure PMItemFavoriteClick(Sender: TObject);
+    Procedure TimerBatterySmartPlugTimer(aSender: TObject);
+    Procedure MItemBattSPClick(Sender: TObject);
+    Procedure MItemPurgeDBClick(Sender: TObject);
+    Procedure MItemHideAllSettingsClick(Sender: TObject);
+    Procedure MItemGeneralSettingsClick(Sender: TObject);
+    Procedure MItemSmartPlugSettingsClick(Sender: TObject);
+    Procedure edtTurnOFFIDRightButtonClick(Sender: TObject);
+    // Private declarations. Variables/Methods can be access inside this class and other class in the same unit. { Ajmal }
+  Strict Private
+    // Strict Private declarations. Variables/Methods can be access inside this class only. { Ajmal }
+    FFixedMenuItems: TList<TMenuItem>;
+    FHotKeyMain: NativeUInt;
+    FParameters: TEParameters;
+    FInitialized: Boolean;
+    FAppGroups, FTemplateGroups: TEApplicationGroups;
+    FParentFolder: String;
+    FConnections: TEConnections;
+    FDisplayLabels: TStringList;
+    FParamCategories: TStringList;
+    FRecentItems: TERecentItems;
+    FClipboardItems: TEClipboardItems;
+    FCurrentProgressMessage: String;
+    FPopupMenuClosed: Boolean;
+    FDownloadManager: IEDownloadManager;
+    FBatterySmartPlug: TEBatterySmartPlug;
+    FUseDatabase: Boolean;
 
-      Procedure OnRecentItemsChange(aSender: TObject);
-      Function MenuItemApplications(Const aType: Integer = cIMG_NONE): TMenuItem;
-      Procedure OpenClipboardBrowser;
-      Procedure OpenParamBrowser(Const aApplication: IEApplication = Nil);
-      Function GetConnections: TEConnections;
-      Function GetAppGroups: TEApplicationGroups;
-      Function GetParameters: TEParameters;
-      Function GetDisplayLabels: TStringList;
-      Procedure DeleteOldBackups;
-      Procedure RegisterAppHotKey;
-      Function ApplicationFromMenuItem(Const aMenuItem: TMenuItem): TEApplication;
-      Function GetRunAsAdmin: Boolean;
-      Procedure SetRunAsAdmin(Const aValue: Boolean);
-      Function GetRecentItems: TERecentItems;
-      Procedure ClearRecentItems(aSender: TObject);
-      Function AppSeparatorMenuIndex(Const aType: Integer): Integer;
-      Function GetClipboardItems: TEClipboardItems;
-      Function GetImageIndexForFileExt(Const aExtension: String): Integer;
-      Function GetAppGroupTemplates: TEApplicationGroups;
-      Function GetParamCategories: TStringList;
-      Procedure OpenParentFolderClick(aSender: TObject);
-      Function GetBatterySmartPlug: TEBatterySmartPlug;
-   protected
-      procedure WndProc(var aMessage: TMessage); override;
-      procedure WMHotKey(var Msg: TWMHotKey); Message WM_HOTKEY;
-      procedure WMDropFiles(var aMessage: TWMDropFiles); Message WM_DROPFILES;
-   Public
-      { Public declarations }
-      Constructor Create(aOwner: TComponent); override;
-      Destructor Destroy; override;
+    Procedure OnRecentItemsChange(aSender: TObject);
+    Function MenuItemApplications(Const aType: Integer = cIMG_NONE): TMenuItem;
+    Procedure OpenClipboardBrowser;
+    Procedure OpenParamBrowser(Const aApplication: IEApplication = Nil);
+    Function GetConnections: TEConnections;
+    Function GetAppGroups: TEApplicationGroups;
+    Function GetParameters: TEParameters;
+    Function GetDisplayLabels: TStringList;
+    Procedure DeleteOldBackups;
+    Procedure RegisterAppHotKey;
+    Function ApplicationFromMenuItem(Const aMenuItem: TMenuItem): TEApplication;
+    Function GetRunAsAdmin: Boolean;
+    Procedure SetRunAsAdmin(Const aValue: Boolean);
+    Function GetRecentItems: TERecentItems;
+    Procedure ClearRecentItems(aSender: TObject);
+    Function AppSeparatorMenuIndex(Const aType: Integer): Integer;
+    Function GetClipboardItems: TEClipboardItems;
+    Function GetImageIndexForFileExt(Const aExtension: String): Integer;
+    Function GetAppGroupTemplates: TEApplicationGroups;
+    Function GetParamCategories: TStringList;
+    Procedure OpenParentFolderClick(aSender: TObject);
+    Function GetBatterySmartPlug: TEBatterySmartPlug;
+  protected
+    procedure WndProc(var aMessage: TMessage); override;
+    procedure WMHotKey(var Msg: TWMHotKey); Message WM_HOTKEY;
+    procedure WMDropFiles(var aMessage: TWMDropFiles); Message WM_DROPFILES;
+  Public
+    { Public declarations }
+    Constructor Create(aOwner: TComponent); override;
+    Destructor Destroy; override;
 
-      Procedure LoadConfig;
-      Procedure SaveConfig;
-      Procedure LoadConfigFromDB;
-      Function BackupFolder: String;
-      Procedure UpdateApplicationListInBackGround;
-      Procedure UpdateApplicationList(const aForceUpdate: Boolean = False);
-      Procedure ReloadFromIni;
-      Procedure RunApplication(Const aName, aExecutableName, aParameter, aSourcePath: String;
-        aSkipFromRecent: Boolean; Const aRunAsAdmin: TCheckBoxState);
-      Procedure LoadParamCategories;
-      Procedure ShowTrayNotification(Const aMessage: String; Const aMsgType: TBalloonFlags = bfInfo);
+    Procedure LoadConfig;
+    Procedure SaveConfig;
+    Procedure LoadConfigFromDB;
+    Function BackupFolder: String;
+    Procedure UpdateApplicationListInBackGround;
+    Procedure UpdateApplicationList(const aForceUpdate: Boolean = False);
+    Procedure ReloadFromIni;
+    Procedure RunApplication(Const aName, aExecutableName, aParameter, aSourcePath: String;
+      aSkipFromRecent: Boolean; Const aRunAsAdmin: TCheckBoxState);
+    Procedure LoadParamCategories;
+    Procedure ShowTrayNotification(Const aMessage: String; Const aMsgType: TBalloonFlags = bfInfo);
 
-      Property BatterySmartPlug: TEBatterySmartPlug Read GetBatterySmartPlug;
-      Property BatterySPTimer: TTimer Read TimerBatterySmartPlug;
-      Property RecentItems: TERecentItems Read GetRecentItems;
-   Published
-      Property AppGroups: TEApplicationGroups Read GetAppGroups;
-      Property AppGroupTemplates: TEApplicationGroups Read GetAppGroupTemplates;
-      Property Parameters: TEParameters Read GetParameters;
-      Property Connections: TEConnections Read GetConnections;
-      Property ParentFolder: String Read FParentFolder;
-      Property IsRunAsAdmin: Boolean Read GetRunAsAdmin Write SetRunAsAdmin;
-      Property DisplayLabels: TStringList Read GetDisplayLabels;
-      Property ParamCategories: TStringList Read GetParamCategories;
-      Property ClipboardItems: TEClipboardItems Read GetClipboardItems;
-      Property UseDatabase: Boolean Read FUseDatabase;
-   End;
+    Property BatterySmartPlug: TEBatterySmartPlug Read GetBatterySmartPlug;
+    Property BatterySPTimer: TTimer Read TimerBatterySmartPlug;
+    Property RecentItems: TERecentItems Read GetRecentItems;
+  Published
+    Property AppGroups: TEApplicationGroups Read GetAppGroups;
+    Property AppGroupTemplates: TEApplicationGroups Read GetAppGroupTemplates;
+    Property Parameters: TEParameters Read GetParameters;
+    Property Connections: TEConnections Read GetConnections;
+    Property ParentFolder: String Read FParentFolder;
+    Property IsRunAsAdmin: Boolean Read GetRunAsAdmin Write SetRunAsAdmin;
+    Property DisplayLabels: TStringList Read GetDisplayLabels;
+    Property ParamCategories: TStringList Read GetParamCategories;
+    Property ClipboardItems: TEClipboardItems Read GetClipboardItems;
+    Property UseDatabase: Boolean Read FUseDatabase;
+  End;
 
 Var
-   FormMDIMain: TFormMDIMain;
+  FormMDIMain: TFormMDIMain;
 
 Implementation
 
 {$R *.dfm}
 
 Uses
-   ESoft.Launcher.UI.AppGroupEditor,
-   ESoft.Launcher.UI.ParamBrowser,
-   ESoft.Launcher.UI.BackupRestore,
-   ESoft.Launcher.UI.ClipboardBrowser,
-   ESoft.Launcher.DM.Main;
+  ESoft.Launcher.UI.AppGroupEditor,
+  ESoft.Launcher.UI.ParamBrowser,
+  ESoft.Launcher.UI.BackupRestore,
+  ESoft.Launcher.UI.ClipboardBrowser,
+  ESoft.Launcher.DM.Main;
 
 Const
-   cIMG_DELETE = 4;
-   cIMG_BRANCH = 9;
-   cIMG_CATEGORY = 19;
-   cIMG_HIDE = 40;
-   cIMG_SHOW = 41;
-   cIMG_APPLICATION = 45;
-   cIMG_APP_UPDATE = 46;
-   cIMG_PARENT_GROUP = 48;
-   cIMG_GROUP = 54;
-   cIMG_FILE_UNKNOWN = 55;
-   cIMG_FILE_PDF = 56;
-   cIMG_FILE_ZIP = 57;
-   cIMG_FILE_DOC = 58;
-   cIMG_FILE_EXCEL = 59;
-   cIMG_FILE_MUSIC = 60;
-   cIMG_FILE_LINK = 61;
-   cIMG_FOLDER = 62;
-   cIMG_URL = 63;
-   cIMG_APP_UPDATE_REQUIRED = 64;
-   cIMG_FILE_PPT = 65;
-   cIMG_FILE_PUBLISHER = 66;
-   cIMG_FILE_ACCESSDB = 67;
-   cIMG_FILE_TEXT = 68;
-   cIMG_FILE_IMAGE = 69;
-   cIMG_FILE_VIDEO = 70;
+  cIMG_DELETE = 4;
+  cIMG_BRANCH = 9;
+  cIMG_CATEGORY = 19;
+  cIMG_HIDE = 40;
+  cIMG_SHOW = 41;
+  cIMG_APPLICATION = 45;
+  cIMG_APP_UPDATE = 46;
+  cIMG_PARENT_GROUP = 48;
+  cIMG_GROUP = 54;
+  cIMG_FILE_UNKNOWN = 55;
+  cIMG_FILE_PDF = 56;
+  cIMG_FILE_ZIP = 57;
+  cIMG_FILE_DOC = 58;
+  cIMG_FILE_EXCEL = 59;
+  cIMG_FILE_MUSIC = 60;
+  cIMG_FILE_LINK = 61;
+  cIMG_FOLDER = 62;
+  cIMG_URL = 63;
+  cIMG_APP_UPDATE_REQUIRED = 64;
+  cIMG_FILE_PPT = 65;
+  cIMG_FILE_PUBLISHER = 66;
+  cIMG_FILE_ACCESSDB = 67;
+  cIMG_FILE_TEXT = 68;
+  cIMG_FILE_IMAGE = 69;
+  cIMG_FILE_VIDEO = 70;
 
-   cGroupVisible_None = 0;
-   cGroupVisible_All = 1;
-   cGroupVisible_ApplicationOnly = 2;
-   cGroupVisible_CategoryOnly = 3;
+  cGroupVisible_None = 0;
+  cGroupVisible_All = 1;
+  cGroupVisible_ApplicationOnly = 2;
+  cGroupVisible_CategoryOnly = 3;
 
-   cAppZipFileNameInSite = 'http://esoft.ucoz.com/Downloads/Launcher/Launcher.zip';
-   cAppZipLinkedFileNameFormat = 'http://esoft.ucoz.com/Downloads/Launcher/Launcher.z%.2d';
-   cUniqueAppVersionCode = cESoftLauncher;
+  cAppZipFileNameInSite = 'http://esoft.ucoz.com/Downloads/Launcher/Launcher.zip';
+  cAppZipLinkedFileNameFormat = 'http://esoft.ucoz.com/Downloads/Launcher/Launcher.z%.2d';
+  cUniqueAppVersionCode = cESoftLauncher;
 
-   cConfigBasic = 'Basic';
-   cConfigFileName = 'FileName';
-   cConfigStartMinimized = 'StartMinimized';
-   cConfigRunAsAdmin = 'RunAsAdmin';
-   cConfigAutoBackUpOnExit = 'AutoBackUpOnExit';
-   cConfigHotKey = 'HotKey';
-   cConfigDefaultHotKeyText = 'Alt+Q';
-   cConfigRecentCount = 'RecentItemsCount';
-   cConfigGroupItems = 'GroupItems';
-   cConfigImediateUpdate = 'ImediateUpdate';
-   cConfigUseDB = 'UseDatabase';
+  cConfigBasic = 'Basic';
+  cConfigFileName = 'FileName';
+  cConfigStartMinimized = 'StartMinimized';
+  cConfigRunAsAdmin = 'RunAsAdmin';
+  cConfigAutoBackUpOnExit = 'AutoBackUpOnExit';
+  cConfigHotKey = 'HotKey';
+  cConfigDefaultHotKeyText = 'Alt+Q';
+  cConfigRecentCount = 'RecentItemsCount';
+  cConfigGroupItems = 'GroupItems';
+  cConfigImediateUpdate = 'ImediateUpdate';
+  cConfigUseDB = 'UseDatabase';
 
-   cConfigSPBattery = 'Smart Plug (Battery)';
-   cConfigSPBEnabled = 'Enabled';
-   cConfigSPBMinThreshold = 'MinThreshold';
-   cConfigSPBMaxThreshold = 'MaxThreshold';
-   cConfigSPBONUID = 'ONUniqueID';
-   cConfigSPBOFFUID = 'OFFUniqueID';
+  cConfigSPBattery = 'Smart Plug (Battery)';
+  cConfigSPBEnabled = 'Enabled';
+  cConfigSPBMinThreshold = 'MinThreshold';
+  cConfigSPBMaxThreshold = 'MaxThreshold';
+  cConfigSPBONUID = 'ONUniqueID';
+  cConfigSPBOFFUID = 'OFFUniqueID';
 
-   cBackups = 'Backups\';
+  cBackups = 'Backups\';
 
-   cURL_API_BASE = 'https://saapp.erratums.com/api.php';
+  cURL_API_BASE = 'https://saapp.erratums.com/api.php';
 
 Resourcestring
-   rsClearRecentItems = 'Clear';
-   rsUpdateApplication = 'Update';
-   rsUpdateApplicationRequired = 'Update [Required]';
+  rsClearRecentItems = 'Clear';
+  rsUpdateApplication = 'Update';
+  rsUpdateApplicationRequired = 'Update [Required]';
 
    { TFormMDIMain }
 Procedure TFormMDIMain.ApplicationEventsActivate(Sender: TObject);
 Var
-   Mutex: THandle;
+  Mutex: THandle;
 Begin
-   If Not FInitialized Then
-   Begin
-      FInitialized := True;
-      Mutex := CreateMutex(Nil, False, cESoftLauncher);
-      If WaitForSingleObject(Mutex, 0) = WAIT_TIMEOUT Then
-      Begin
-         MessageDlg('Aplication is already running.' + sLineBreak + 'Only single instance allowed.', mtError, [mbOK], 0);
-         Application.Terminate;
-      End
-      Else
-      Begin
-         Visible := Not MItemStartMinimized.Checked;
-         UpdateApplicationList(True);
-         ClipboardItems.Load;
-      End;
-   End;
+  If Not FInitialized Then
+  Begin
+    FInitialized := True;
+    Mutex := CreateMutex(Nil, False, cESoftLauncher);
+    If WaitForSingleObject(Mutex, 0) = WAIT_TIMEOUT Then
+    Begin
+      MessageDlg('Aplication is already running.' + sLineBreak + 'Only single instance allowed.', mtError, [mbOK], 0);
+      Application.Terminate;
+    End
+    Else
+    Begin
+      Visible := Not MItemStartMinimized.Checked;
+      UpdateApplicationList(True);
+      ClipboardItems.Load;
+    End;
+  End;
 End;
 
 Function TFormMDIMain.ApplicationFromMenuItem(Const aMenuItem: TMenuItem): TEApplication;
@@ -524,6 +544,12 @@ Procedure TFormMDIMain.edtConnectionRightButtonClick(Sender: TObject);
 Begin
    Connections.FileName := '';
    edtConnection.Text := Connections.FileName;
+End;
+
+Procedure TFormMDIMain.edtTurnOFFIDRightButtonClick(Sender: TObject);
+Begin
+  If Sender is TButtonedEdit Then
+    TButtonedEdit(Sender).Clear;
 End;
 
 Procedure TFormMDIMain.FormCloseQuery(Sender: TObject; Var CanClose: Boolean);
@@ -882,6 +908,7 @@ Begin
    End;
 
    DeleteOldBackups;
+   STDatabase.Connection.Close;
    varZipFile := TZipFile.Create;
    Try
       sZipFileName := GetUniqueFilename(BackupFolder, '.zip', cESoftLauncher + '_');
@@ -890,6 +917,7 @@ Begin
       _AddFileToZip(ParentFolder + cGroup_INI);
       _AddFileToZip(ParentFolder + cParam_INI);
       _AddFileToZip(ParentFolder + cClipbord_Data);
+      _AddFileToZip(ParentFolder + cDatabaseFileName);
       varZipFile.Close;
    Finally
       varZipFile.Free;
@@ -902,17 +930,26 @@ Begin
    MItemBattSP.Checked := BatterySPTimer.Enabled;    
 End;
 
+Procedure TFormMDIMain.MItemGeneralSettingsClick(Sender: TObject);
+Begin
+  grpSmartPlugSettings.Hide;
+  grpSettings.Show;
+  MItemGeneralSettings.Checked := True;
+End;
+
+Procedure TFormMDIMain.MItemHideAllSettingsClick(Sender: TObject);
+Begin
+  grpSettings.Hide;
+  grpSmartPlugSettings.Hide;
+  MItemHideAllSettings.Checked := True;
+End;
+
 Procedure TFormMDIMain.MItemPurgeDBClick(Sender: TObject);
 Begin
   If MessageDlg('Are you sure you want delete purge data? ', mtWarning, mbYesNo, mrYes) = mrNo Then
     Exit;
 
   STDatabase.PurgeDatabase;
-End;
-
-Procedure TFormMDIMain.MItemShowHideSettingsClick(Sender: TObject);
-Begin
-   grpSettings.Visible := MItemShowHideSettings.Checked;
 End;
 
 Procedure TFormMDIMain.MItemParametersClick(Sender: TObject);
@@ -928,6 +965,13 @@ Begin
    Finally
       FreeAndNil(FormBackupRestore);
    End;
+End;
+
+Procedure TFormMDIMain.MItemSmartPlugSettingsClick(Sender: TObject);
+Begin
+  grpSettings.Hide;
+  grpSmartPlugSettings.Show;
+  MItemSmartPlugSettings.Checked := True;
 End;
 
 Procedure TFormMDIMain.ClearRecentItems(aSender: TObject);
@@ -1338,10 +1382,10 @@ Begin
 
    varSTDBNode := STDatabase[cSTDBNodeConfig].ChildNode[cConfigSPBattery];
    varSTDBNode[cConfigSPBEnabled].Value := BatterySmartPlug.Enabled;
-   // varSTDBNode[cConfigSPBMinThreshold].Value := BatterySmartPlug.TurnOnLevel;
-   // varSTDBNode[cConfigSPBMaxThreshold].Value := BatterySmartPlug.TurnOffLevel;
-   // varSTDBNode[cConfigSPBONUID].Value := BatterySmartPlug.TurnOnUniqueID;
-   // varSTDBNode[cConfigSPBOFFUID].Value := BatterySmartPlug.TurnOffUniqueID;
+   varSTDBNode[cConfigSPBMinThreshold].Value := BatterySmartPlug.TurnOnLevel;
+   varSTDBNode[cConfigSPBMaxThreshold].Value := BatterySmartPlug.TurnOffLevel;
+   varSTDBNode[cConfigSPBONUID].Value := BatterySmartPlug.TurnOnUniqueID;
+   varSTDBNode[cConfigSPBOFFUID].Value := BatterySmartPlug.TurnOffUniqueID;
 
    STDatabase[cSTDBNodeConfig].Value := True;
    STDatabase.SaveToDB;
@@ -1883,10 +1927,6 @@ Begin
    Enabled := False;
    
    FRequestWaitInterval := 0;
-   FTurnOnLevel := 20;
-   FTurnOffLevel := 100;
-   FTurnOnUniqueID := EmptyStr;
-   FTurnOffUniqueID := EmptyStr;
 End;
 
 Function TEBatterySmartPlug.IsACInputAvailable: Boolean;
@@ -1943,6 +1983,30 @@ Begin
       varIDHttp.Free;
       varParams.Free;
    End;
+End;
+
+Procedure TEBatterySmartPlug.SetTurnOffLevel(aValue: Integer);
+Begin
+  If Not (aValue In [20..100]) Then
+    aValue := 100;
+  Owner.edtMaxThreshold.Text := IntToStr(aValue);
+End;
+
+Procedure TEBatterySmartPlug.SetTurnOffUniqueID(const aValue: String);
+Begin
+  Owner.edtTurnOFFID.Text := aValue;
+End;
+
+Procedure TEBatterySmartPlug.SetTurnOnLevel(aValue: Integer);
+Begin
+  If Not (aValue In [5..80]) Then
+    aValue := 20;
+  Owner.edtMinThreshold.Text := IntToStr(aValue);
+End;
+
+Procedure TEBatterySmartPlug.SetTurnOnUniqueID(const aValue: String);
+Begin
+  Owner.edtTurnONID.Text := aValue;
 End;
 
 Procedure TEBatterySmartPlug.Execute;
@@ -2002,6 +2066,36 @@ End;
 Function TEBatterySmartPlug.GetTimer: TTimer;
 Begin
    Result := Owner.BatterySPTimer;
+End;
+
+Function TEBatterySmartPlug.GetTurnOffLevel: Integer;
+Begin
+  Result := 100;
+  If Not Integer.TryParse(Owner.edtMaxThreshold.Text, Result) Then
+  Begin
+    If Not (Result In [20..100]) Then
+      Exit(100);
+  End;
+End;
+
+Function TEBatterySmartPlug.GetTurnOffUniqueID: String;
+Begin
+  Result := Owner.edtTurnOFFID.Text;
+End;
+
+Function TEBatterySmartPlug.GetTurnOnLevel: Integer;
+Begin
+  Result := 20;
+  If Not Integer.TryParse(Owner.edtMinThreshold.Text, Result) Then
+  Begin
+    If Not (Result In [5..80]) Then
+      Exit(20);
+  End;
+End;
+
+Function TEBatterySmartPlug.GetTurnOnUniqueID: String;
+Begin
+  Result := Owner.edtTurnONID.Text;
 End;
 
 End.

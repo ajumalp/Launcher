@@ -99,16 +99,17 @@
         <DCC_UnitSearchPath>$(ES_DELPHICONTROLS);3rd Party\JCL\source\windows;3rd Party\JCL\source\common;3rd Party\JCL\source\include;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <Icon_MainIcon>res\Images\EG_Icon.ico</Icon_MainIcon>
         <Debugger_IncludeSystemVars>true</Debugger_IncludeSystemVars>
-        <VerInfo_Build>39</VerInfo_Build>
+        <VerInfo_Build>12</VerInfo_Build>
         <DCC_Define>AbbreviaZipper;$(DCC_Define)</DCC_Define>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=Erratum Solutions;FileDescription=Easy App Launcher;FileVersion=1.0.1.39;InternalName=Application Launcher;LegalCopyright=Copyright @ 2020;LegalTrademarks=;OriginalFilename=;ProductName=Launcher;ProductVersion=1.0.1.38;Comments=Developed by Muhammad Ajmal P;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=Erratum Solutions;FileDescription=Easy App Launcher;FileVersion=2.0.1.12;InternalName=Application Launcher;LegalCopyright=Copyright @ 2020;LegalTrademarks=;OriginalFilename=;ProductName=Launcher;ProductVersion=2.0.1.12;Comments=Developed by Muhammad Ajmal P;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <BT_BuildType>Debug</BT_BuildType>
         <DCC_ExeOutput>.\$(Platform)\$(Config)\Build</DCC_ExeOutput>
         <DCC_DcuOutput>.\$(Platform)\$(Config)\dcu</DCC_DcuOutput>
+        <VerInfo_MajorVer>2</VerInfo_MajorVer>
     </PropertyGroup>
     <Import Condition="'$(Cfg_1_Win64)'!='' And Exists('res\32Bit App Version Config.optset')" Project="res\32Bit App Version Config.optset"/>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
@@ -228,15 +229,15 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="3">
-                <DeployFile LocalName="Win32\Debug\Build\Launcher.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win32">
-                        <RemoteName>Launcher.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
                 <DeployFile LocalName="res\launcher.db3" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win32\Debug\Build\Launcher.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>Launcher.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
