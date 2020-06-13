@@ -1322,7 +1322,8 @@ Begin
    PMItemCategories.Visible := PMItemCategories.Count > 0;
    PMItemViewOrEditNotes.Enabled := ClipboardItems.Count > 0;
    PMItemAddFromClipboard.Enabled := Trim(Clipboard.AsText) <> '';
-   PMItemNotes.Enabled := (PMItemAddFromClipboard.Enabled Or PMItemViewOrEditNotes.Enabled) And Not Assigned(FormClipboardBrowser);
+   PMItemNotes.Visible := (PMItemAddFromClipboard.Enabled Or PMItemViewOrEditNotes.Enabled) And Not Assigned(FormClipboardBrowser);
+   PMItemRecentItems.Visible := PMItemRecentItems.Count > 0;
 
    If Visible Then
       PMItemShowHide.ImageIndex := cIMG_HIDE

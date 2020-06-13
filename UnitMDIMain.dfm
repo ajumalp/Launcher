@@ -68,8 +68,6 @@ object FormMDIMain: TFormMDIMain
     TabOrder = 0
     OnDblClick = tvApplicationsDblClick
     OnMouseDown = tvApplicationsMouseDown
-    ExplicitTop = 143
-    ExplicitHeight = 283
   end
   object PanelDeveloper: TPanel
     AlignWithMargins = True
@@ -101,7 +99,6 @@ object FormMDIMain: TFormMDIMain
     Caption = ' Settings '
     TabOrder = 2
     Visible = False
-    ExplicitTop = 3
     object pnlConnection: TPanel
       AlignWithMargins = True
       Left = 5
@@ -303,8 +300,6 @@ object FormMDIMain: TFormMDIMain
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitLeft = 10
-      ExplicitTop = 31
       object Label6: TLabel
         AlignWithMargins = True
         Left = 8
@@ -338,8 +333,6 @@ object FormMDIMain: TFormMDIMain
         RightButton.Visible = True
         TabOrder = 0
         OnRightButtonClick = edtTurnOFFIDRightButtonClick
-        ExplicitLeft = 85
-        ExplicitWidth = 217
       end
       object edtMaxThreshold: TEdit
         AlignWithMargins = True
@@ -401,7 +394,6 @@ object FormMDIMain: TFormMDIMain
         RightButton.Visible = True
         TabOrder = 0
         OnRightButtonClick = edtTurnOFFIDRightButtonClick
-        ExplicitTop = -5
       end
       object edtMinThreshold: TEdit
         AlignWithMargins = True
