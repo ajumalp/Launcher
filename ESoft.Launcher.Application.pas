@@ -119,6 +119,7 @@ Type
       FBranchingPrefix, FBranchingSufix: String;
       FMainBranch, FCurrentBranch, FNoOfBuilds: Integer;
       FSubItems: TEApplicationGroups;
+      FInvalidGroup: Boolean;
 
       Function GetIsApplication: Boolean;
       Function GetIsFolder: Boolean;
@@ -158,6 +159,7 @@ Type
 
       Function IsBranchingEnabled: Boolean;
       Property FinalSourceFolder: String Read GetFinalSourceFolder;
+      Property InvalidGroup: Boolean Read FInvalidGroup;
    Published
       Property Name: String Read FName Write FName;
       Property ExecutableName: String Read FExecutableName Write FExecutableName;
@@ -260,6 +262,7 @@ Constructor TEApplicationGroup.Create;
 Begin
    Inherited Create(True);
 
+   FInvalidGroup := False;
    FCreateFolder := True;
    FSkipFromRecent := False;
    FSourceFolder := '';
@@ -413,6 +416,9 @@ Begin
          SetCurrentDir(SourceFolder);
          If IsFolder And (FindFirst(sCurrFileMask, faDirectory, varSearch) = 0) Then
          Begin
+            If Not DirectoryExists(sCurrPath) Then
+               Continue;
+               
             Repeat
                If (varSearch.Attr And faDirectory) = faDirectory Then
                Begin
@@ -470,6 +476,9 @@ Begin
          GroupType := IfThen(GroupType = 0, 2, 0);
          varIniFile.DeleteKey(Name, 'Is_Application');
       End;
+
+      // If this is a folder and the folder dose not exist, then don't load it { Ajmal }
+      FInvalidGroup := (GroupType = cGroupType_Folder) And (Not DirectoryExists(SourceFolder));
 
       DisplayLabel := varIniFile.ReadString(Name, cGroupLabel, '');
       IsMajorBranching := varIniFile.ReadBool(Name, cGroupIsMajorBranching, False);
@@ -688,6 +697,8 @@ Begin
             Continue; // A group with same name already exist. { Ajmal }
 
          varCurrAppGrp.LoadData(aFileName);
+         If varCurrAppGrp.InvalidGroup Then 
+          Remove(sCurrName);
       End;
       FIsLoaded := True;
    Finally

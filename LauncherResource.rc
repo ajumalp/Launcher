@@ -1,2 +1,3 @@
 sqlite_db RCDATA "res\\launcher.db3"
 sqlite_dll RCDATA "res\\sqlite3.dll"
+sqlite_dll_x64 RCDATA "res\\sqlite3x64.dll"

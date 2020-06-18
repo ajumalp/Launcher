@@ -42,7 +42,7 @@ Type
     Function GetParentID: Int64;
     Function GetName: String;
     Function GetValue: Variant;
-    Procedure SetValue(const aValue: Variant);
+    Procedure SetValue(Const aValue: Variant);
     Function GetStatus: eSTDBItemStatus;
     Function GetAsString: String;
     Function GetAsInteger: Integer;
@@ -116,11 +116,11 @@ Type
     Function GetParentID: Int64; Virtual;
     Function GetName: String; Virtual;
     Function GetValue: Variant; Virtual;
-    Procedure SetValue(const aValue: Variant);
+    Procedure SetValue(Const aValue: Variant);
     Function GetStatus: eSTDBItemStatus; Virtual;
   Public
     Constructor Create(Const aDataset: TClientDataSet; aParentID: Int64; aNodeName: String);
-    Destructor Destroy; override;
+    Destructor Destroy; Override;
 
     Function IsRootNode: Boolean;
     Function HasData: Boolean;
@@ -157,7 +157,7 @@ Type
     Function GetName: String; Override;
     Function GetValue: Variant; Override;
     Function GetStatus: eSTDBItemStatus; Override;
-    Procedure SetValue(const aValue: Variant);
+    Procedure SetValue(Const aValue: Variant);
   Public
     Constructor Create(Const aDataset: TClientDataSet); Reintroduce;
   End;
@@ -179,7 +179,7 @@ Type
     Property RootNode: IESTDBNode Read GetRootNode;
     Property ChildNode[aNodeName: String]: IESTDBNode Read GetChildNode; Default;
     Property ChildNode[aNodeName: String; aDefaultValue: Variant]: IESTDBNode Read GetChildNodeEx; Default;
-  end;
+  End;
 
   TESTDatabase = Class(TInterfacedObject, IESTDatabase)
   Strict Private
@@ -202,7 +202,7 @@ Type
     Property GeneralDSet: TClientDataSet Read GetGeneralDSet;
   Public
     Constructor Create;
-    Destructor Destroy; override;
+    Destructor Destroy; Override;
 
     Function SaveToDB: Integer;
     Function FetchQuery(Const aQuery: String): Variant;
@@ -223,24 +223,22 @@ Type
     qrySTDBMain: TSQLQuery;
 
     Procedure DataModuleCreate(Sender: TObject);
-    procedure clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet;
-      E: EReconcileError; UpdateKind: TUpdateKind;
-      var Action: TReconcileAction);
+    Procedure clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet; E: EReconcileError; UpdateKind: TUpdateKind; Var Action: TReconcileAction);
   Public
     Function BuildConnectionString(Const aDatabase: String): String;
     Property GeneralDSet: TClientDataSet Read clntDSetSTDBMain;
   End;
 
-  Function STDatabase: IESTDatabase;
+Function STDatabase: IESTDatabase;
 
 Implementation
 
 {%CLASSGROUP 'Vcl.Controls.TControl'}
-
 {$R *.dfm}
 
 Var
   _STDatabase: IESTDatabase = Nil;
+
 Function STDatabase: IESTDatabase;
 Begin
   If Not Assigned(_STDatabase) Then
@@ -261,8 +259,7 @@ Begin
   Result := 'DRIVER=SQLite3 ODBC Driver;Database=' + aDatabase + ';LongNames=0;Timeout=1000;NoTXN=0;SyncPragma=NORMAL;StepAPI=0;';
 End;
 
-Procedure TdmMain.clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet;
-  E: EReconcileError; UpdateKind: TUpdateKind; var Action: TReconcileAction);
+Procedure TdmMain.clntDSetSTDBMainReconcileError(DataSet: TCustomClientDataSet; E: EReconcileError; UpdateKind: TUpdateKind; Var Action: TReconcileAction);
 Begin
   MessageDlg(E.Message, mtError, [mbOK], 0);
 End;
@@ -283,11 +280,11 @@ End;
 { TESTDatabase }
 
 Function TESTDatabase.SaveToDB: Integer;
-begin
+Begin
   Result := GeneralDSet.ApplyUpdates(0);
   ResetObjectIDPK;
   ReloadData;
-end;
+End;
 
 Function TESTDatabase.GetConnection: TSQLConnection;
 Begin
@@ -306,15 +303,15 @@ Begin
   FRootNode := Nil;
 End;
 
-destructor TESTDatabase.Destroy;
-begin
+Destructor TESTDatabase.Destroy;
+Begin
   If Assigned(FDataModule) Then
     FreeAndNil(FDataModule);
 
   Inherited;
-end;
+End;
 
-Function TESTDatabase.FetchQuery(const aQuery: String): Variant;
+Function TESTDatabase.FetchQuery(Const aQuery: String): Variant;
 Var
   varSQLQuery: TSQLQuery;
 Begin
@@ -332,7 +329,7 @@ Begin
   End;
 End;
 
-Function TESTDatabase.ExecuteQuery(const aQuery: String): Integer;
+Function TESTDatabase.ExecuteQuery(Const aQuery: String): Integer;
 Var
   varSQLQuery: TSQLQuery;
 Begin
@@ -354,12 +351,12 @@ Begin
     Exit;
 
   varResStream := TResourceStream.Create(HInstance, aResName, RT_RCDATA);
-  try
+  Try
     varResStream.Position := 0;
     varResStream.SaveToFile(ExtractFilePath(ParamStr(0)) + aFileName);
-  finally
+  Finally
     varResStream.Free;
-  end;
+  End;
 End;
 
 Function TESTDatabase.GetChildNode(aNodeName: String): IESTDBNode;
@@ -377,8 +374,11 @@ Begin
   If Not Assigned(FDataModule) Then
   Begin
     ExtractDatabaseFile('sqlite_db', 'launcher.db3');
+    {$IFDEF WIN64}
+    ExtractDatabaseFile('sqlite_dll_x64', 'sqlite3.dll');
+    {$ELSE}
     ExtractDatabaseFile('sqlite_dll', 'sqlite3.dll');
-
+    {$ENDIF}
     FDataModule := TdmMain.Create(Nil);
     ReloadData;
   End;
@@ -430,7 +430,7 @@ Begin
 End;
 
 Procedure TESTDatabase.ResetObjectIDPK;
-Const 
+Const
   cSQL_RESET_OID = 'UPDATE sqlite_sequence SET SEQ = (SELECT MAX(OID) FROM STDBMAIN) WHERE NAME = "STDBMAIN"';
 Begin
   If FNextOID = -1 Then
@@ -444,12 +444,12 @@ End;
 
 Procedure TESTDBNode.Activate;
 Begin
-  LoadData;  
+  LoadData;
   FStatus := sdsActive;
   Post;
 End;
 
-Function TESTDBNode.ChildExists(const aNodeName: String): Boolean;
+Function TESTDBNode.ChildExists(Const aNodeName: String): Boolean;
 Begin
   Result := Locate([cDB_FIELD_PARENTID, cDB_FIELD_NAME], [OID, aNodeName]);
 End;
@@ -459,7 +459,7 @@ Begin
   Value := Null;
 End;
 
-Constructor TESTDBNode.Create(const aDataset: TClientDataSet; aParentID: Int64; aNodeName: String);
+Constructor TESTDBNode.Create(Const aDataset: TClientDataSet; aParentID: Int64; aNodeName: String);
 Begin
   FOID := 0;
   FValue := Null;
@@ -477,12 +477,14 @@ Procedure TESTDBNode.Delete(Const aDeleteType: eSTDBItemStatus = sdsDeleted; Con
 
   Function _DeleteQuery(Const aDeleteFrom: String = 'PARENTID'): String;
   Begin
-    If aDeleteFromDB Then 
+    If aDeleteFromDB Then
       Exit('DELETE FROM STDBMAIN WHERE ' + aDeleteFrom + ' = ');
 
     Case aDeleteType Of
-      sdsDeleted: Result := 'UPDATE STDBMAIN SET STATUS = "D" WHERE ' + aDeleteFrom + ' = ';
-      sdsInActive: Result := 'UPDATE STDBMAIN SET STATUS = "I" WHERE ' + aDeleteFrom + ' = ';
+      sdsDeleted:
+        Result := 'UPDATE STDBMAIN SET STATUS = "D" WHERE ' + aDeleteFrom + ' = ';
+      sdsInActive:
+        Result := 'UPDATE STDBMAIN SET STATUS = "I" WHERE ' + aDeleteFrom + ' = ';
     End;
   End;
 
@@ -508,7 +510,7 @@ Procedure TESTDBNode.Delete(Const aDeleteType: eSTDBItemStatus = sdsDeleted; Con
         Close;
       End;
 
-      For lOID in varOIDList Do
+      For lOID In varOIDList Do
         _DeleteChildNodes(lOID);
     Finally
       varSQLQuery.Free;
@@ -525,7 +527,7 @@ Begin
   STDatabase.ExecuteQuery(_DeleteQuery('OID') + OID.ToString);
 End;
 
-Procedure TESTDBNode.DeleteChild(const aNodeName: String);
+Procedure TESTDBNode.DeleteChild(Const aNodeName: String);
 Begin
   If ChildExists(aNodeName) Then
     ChildNode[aNodeName].Delete;
@@ -630,9 +632,12 @@ Begin
   If Locate([cDB_FIELD_PARENTID, cDB_FIELD_NAME], [ParentID, Name]) Then
   Begin
     Case FDataset.UpdateStatus Of
-      usInserted: Result := sdsNew;
-      usModified: Result := sdsUpdating;
-      usUnmodified: Result := sdsBrowse;
+      usInserted:
+        Result := sdsNew;
+      usModified:
+        Result := sdsUpdating;
+      usUnmodified:
+        Result := sdsBrowse;
     End;
   End;
 End;
@@ -682,14 +687,17 @@ Begin
 
   If Not Locate Then
     Raise Exception.Create('Invalid Node Access');
-   
+
   FOID := FDataset.FieldByName(cDB_FIELD_OID).AsInteger;
   FValue := FDataset.FieldByName(cDB_FIELD_VALUE).AsVariant;
-      
+
   sStatus := FDataset.FieldByName(cDB_FIELD_STATUS).AsString.Trim;
-  If sStatus.Equals('A') Then FStatus := sdsActive
-  Else If sStatus.Equals('D') Then FStatus := sdsDeleted
-  Else If sStatus.Equals('I') Then FStatus := sdsInActive;
+  If sStatus.Equals('A') Then
+    FStatus := sdsActive
+  Else If sStatus.Equals('D') Then
+    FStatus := sdsDeleted
+  Else If sStatus.Equals('I') Then
+    FStatus := sdsInActive;
 
   FIsLoaded := True;
 End;
@@ -713,7 +721,7 @@ Begin
   FMoveToFirstChild := True;
 End;
 
-Function TESTDBNode.Locate(const aKeys: Array Of String; const aValues: array of Variant): Boolean;
+Function TESTDBNode.Locate(Const aKeys: Array Of String; Const aValues: Array Of Variant): Boolean;
 Var
   iCntr: Integer;
   sKeys: String;
@@ -749,8 +757,10 @@ End;
 
 Procedure TESTDBNode.Post;
 Begin
-  If Locate Then FDataset.Edit
-  Else FDataset.Append;
+  If Locate Then
+    FDataset.Edit
+  Else
+    FDataset.Append;
 
   FDataset.FieldByName(cDB_FIELD_VALUE).Value := FValue;
   // When a value is set, the re activate the node { Ajmal }
@@ -758,7 +768,7 @@ Begin
   FDataset.Post;
 End;
 
-Procedure TESTDBNode.SetValue(const aValue: Variant);
+Procedure TESTDBNode.SetValue(Const aValue: Variant);
 Begin
   LoadData;
   FValue := aValue;
@@ -767,7 +777,7 @@ End;
 
 { TESTDBRootNode }
 
-Constructor TESTDBRootNode.Create(const aDataset: TClientDataSet);
+Constructor TESTDBRootNode.Create(Const aDataset: TClientDataSet);
 Begin
   Inherited Create(aDataset, 0, 'root');
 End;
@@ -788,7 +798,7 @@ Begin
 End;
 
 Function TESTDBRootNode.GetStatus: eSTDBItemStatus;
-begin
+Begin
   Result := sdsActive;
 End;
 
@@ -797,7 +807,7 @@ Begin
   Result := Null;
 End;
 
-Procedure TESTDBRootNode.SetValue(const aValue: Variant);
+Procedure TESTDBRootNode.SetValue(Const aValue: Variant);
 Begin
   // We should not change the value of root node { Ajmal }
 End;
