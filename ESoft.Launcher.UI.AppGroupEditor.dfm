@@ -190,7 +190,9 @@ object FormAppGroupEditor: TFormAppGroupEditor
       Top = 177
       Width = 150
       Height = 21
-      Hint = 'Multi format using ";" [*.mp3;*.wma]. Use "*" for folder only.'
+      Hint = 
+        'Multi format using ";" [*.mp3;*.wma]. Use "*" for folder only. "' +
+        '*_1" for 1st level folder only'
       CustomHint = BalloonHint
       Images = FormMDIMain.ImageList_Ord
       LeftButton.CustomHint = BalloonHint
