@@ -167,7 +167,7 @@ object FormMDIMain: TFormMDIMain
         Left = 8
         Top = 3
         Width = 66
-        Height = 13
+        Height = 21
         Margins.Left = 8
         Align = alLeft
         Caption = 'Connections'
@@ -178,6 +178,7 @@ object FormMDIMain: TFormMDIMain
         Font.Style = [fsBold]
         ParentFont = False
         Layout = tlCenter
+        ExplicitHeight = 13
       end
       object sBtnBrowseConnection: TSpeedButton
         AlignWithMargins = True
@@ -557,6 +558,11 @@ object FormMDIMain: TFormMDIMain
       end
       object N4: TMenuItem
         Caption = '-'
+      end
+      object MItemSave: TMenuItem
+        Caption = 'Save'
+        ShortCut = 16467
+        OnClick = MItemSaveClick
       end
       object MItemExit: TMenuItem
         Caption = 'Exit'

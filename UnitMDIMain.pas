@@ -220,6 +220,7 @@ Type
     Label7: TLabel;
     edtTurnONID: TButtonedEdit;
     edtMinThreshold: TEdit;
+    MItemSave: TMenuItem;
     Procedure sBtnBrowseConnectionClick(Sender: TObject);
     Procedure edtConnectionRightButtonClick(Sender: TObject);
     Procedure FormCreate(Sender: TObject);
@@ -261,6 +262,7 @@ Type
     Procedure MItemGeneralSettingsClick(Sender: TObject);
     Procedure MItemSmartPlugSettingsClick(Sender: TObject);
     Procedure edtTurnOFFIDRightButtonClick(Sender: TObject);
+    Procedure MItemSaveClick(Sender: TObject);
     // Private declarations. Variables/Methods can be access inside this class and other class in the same unit. { Ajmal }
   Strict Private
     // Strict Private declarations. Variables/Methods can be access inside this class only. { Ajmal }
@@ -593,7 +595,6 @@ Begin
 
   UnRegisterHotKey(Handle, FHotKeyMain);
   GlobalDeleteAtom(FHotKeyMain);
-  ClipboardItems.Save;
 
   EFreeAndNil(FFixedMenuItems);
   EFreeAndNil(FRecentItems);
@@ -602,22 +603,6 @@ Begin
   EFreeAndNil(FConnections);
   EFreeAndNil(FClipboardItems);
   EFreeAndNil(FTemplateGroups);
-
-  If Assigned(FParameters) Then
-  Begin
-    Parameters.SaveData;
-    FreeAndNil(FParameters);
-  End;
-
-  If Assigned(FAppGroups) Then
-  Begin
-    Try
-      AppGroups.SaveData(ParentFolder + cGroup_INI);
-    Except
-      // Do nothing here { Ajmal }
-    End;
-    FreeAndNil(FAppGroups);
-  End;
 End;
 
 Procedure TFormMDIMain.FormHide(Sender: TObject);
@@ -966,6 +951,29 @@ Begin
   Finally
     FreeAndNil(FormBackupRestore);
   End;
+End;
+
+Procedure TFormMDIMain.MItemSaveClick(Sender: TObject);
+Begin
+  SaveConfig;
+  ClipboardItems.Save;
+  If Assigned(FParameters) Then
+  Begin
+    Parameters.SaveData;
+    FreeAndNil(FParameters);
+  End;
+
+  If Assigned(FAppGroups) Then
+  Begin
+    Try
+      AppGroups.SaveData(ParentFolder + cGroup_INI);
+    Except
+      // Do nothing here { Ajmal }
+    End;
+    FreeAndNil(FAppGroups);
+  End;
+
+  MessageDlg('Data saved successfully', mtInformation, [mbOK], 0);
 End;
 
 Procedure TFormMDIMain.MItemSmartPlugSettingsClick(Sender: TObject);
