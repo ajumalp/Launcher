@@ -381,6 +381,7 @@ Const
   cIMG_FILE_TEXT = 68;
   cIMG_FILE_IMAGE = 69;
   cIMG_FILE_VIDEO = 70;
+  cIMG_FILE_VSCODE = 71;
 
   cGroupVisible_None = 0;
   cGroupVisible_All = 1;
@@ -692,7 +693,9 @@ Begin
   Else If SameText(aExtension, '.mp4') Or SameText(aExtension, '.avi') Or SameText(aExtension, '.wmv') Then
     Result := cIMG_FILE_VIDEO
   Else If SameText(aExtension, '.lnk') Then
-    Result := cIMG_FILE_LINK;
+    Result := cIMG_FILE_LINK
+  Else If SameText(aExtension, '.code-workspace') Then
+    Result := cIMG_FILE_VSCODE;
 End;
 
 Function TFormMDIMain.GetParamCategories: TStringList;
@@ -1811,7 +1814,11 @@ Begin
         Else If (varAppGrp.ExecutableName <> '') And (ExtractFileExt(varAppGrp.ExecutableName) = '') Then
           iCurrGrpImageIndex := cIMG_FOLDER
         Else
-          iCurrGrpImageIndex := cIMG_APPLICATION;
+        Begin
+          iCurrGrpImageIndex := GetImageIndexForFileExt(ExtractFileExt(varAppGrp.ExecutableName));
+          If iCurrGrpImageIndex = cIMG_FILE_UNKNOWN Then
+            iCurrGrpImageIndex := cIMG_APPLICATION;
+        End;
 
         varCurrMenuGroup.ImageIndex := iCurrGrpImageIndex;
         varCurrNode.ImageIndex := iCurrGrpImageIndex;
