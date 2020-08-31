@@ -21,6 +21,7 @@ Uses
   Datasnap.DBClient,
   Generics.Collections,
   Variants,
+  MidasLib,
   Data.FMTBcd;
 
 Const
